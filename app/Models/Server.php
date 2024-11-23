@@ -14,6 +14,7 @@ class Server extends Model
     protected $fillable = [
         'name',
         'server_type_id',
+        'mqtt_broker_id',
         'url',
         'description',
         'monitoring_interval',
@@ -32,6 +33,11 @@ class Server extends Model
     public function serverType(): BelongsTo
     {
         return $this->belongsTo(ServerType::class);
+    }
+
+    public function mqttBroker(): BelongsTo
+    {
+        return $this->belongsTo(MqttBroker::class);
     }
 
     public function healthChecks(): HasMany

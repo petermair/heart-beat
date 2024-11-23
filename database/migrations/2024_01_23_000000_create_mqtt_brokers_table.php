@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('mqtt_brokers', function (Blueprint $table) {
@@ -14,14 +17,18 @@ return new class extends Migration
             $table->string('host');
             $table->integer('port')->default(1883);
             $table->string('username')->nullable();
-            $table->string('password')->nullable();
-            $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->boolean('use_ssl')->default(false);
+            $table->text('password')->nullable();
+            $table->boolean('ssl_enabled')->default(false);
+            $table->text('ssl_ca')->nullable();
+            $table->text('ssl_cert')->nullable();
+            $table->text('ssl_key')->nullable();
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('mqtt_brokers');

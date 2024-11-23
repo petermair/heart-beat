@@ -14,28 +14,24 @@ class MqttBroker extends Model
         'name',
         'host',
         'port',
+        'username',
+        'password',
         'ssl_enabled',
-        'description',
-        'monitoring_interval',
-        'is_active',
-        'credentials', // JSON field for username, password, certificates
-        'test_topic',  // Topic to use for availability testing
+        'ssl_ca',
+        'ssl_cert',
+        'ssl_key',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
         'ssl_enabled' => 'boolean',
-        'credentials' => 'encrypted:array',
-        'monitoring_interval' => 'integer',
+        'password' => 'encrypted',
+        'ssl_ca' => 'encrypted',
+        'ssl_cert' => 'encrypted',
+        'ssl_key' => 'encrypted',
     ];
 
-    public function healthChecks(): HasMany
+    public function servers(): HasMany
     {
-        return $this->hasMany(HealthCheck::class);
-    }
-
-    public function alertRules(): HasMany
-    {
-        return $this->hasMany(AlertRule::class);
+        return $this->hasMany(Server::class);
     }
 }

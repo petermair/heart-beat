@@ -1,214 +1,298 @@
-# TODOs for IoT Heartbeat Project
+# Heart-Beat Service Implementation Todo
 
-## Project Goals
-- [ ] IoT Platform Monitoring
-  - [ ] Thingsboard server monitoring
-    - [ ] HTTP/HTTPS availability check
-    - [ ] Service status check
-    - [ ] API endpoint health check
-  - [ ] Chirpstack server monitoring
-    - [ ] HTTP/HTTPS availability check
-    - [ ] Service status check
-    - [ ] gRPC endpoint health check
-  - [ ] MQTT Infrastructure
-    - [ ] Broker availability check
-    - [ ] Connection test
-    - [ ] Topic subscription test
+## Completed Tasks 
 
-- [ ] Dashboard Implementation
-  - [ ] Real-time status overview
-  - [ ] Historical uptime graphs
-  - [ ] Service health metrics
-  - [ ] Response time monitoring
-  - [ ] Custom widgets for each service
+### MQTT Implementation
+- [x] Base MQTT Client implementation
+- [x] ChirpStack MQTT Client
+  - [x] Uplink message handling
+  - [x] Downlink message handling
+  - [x] Join event handling
+  - [x] ACK handling
+  - [x] Error handling
+- [x] ThingsBoard MQTT Client
+  - [x] Telemetry data sending
+  - [x] Attribute updates
+  - [x] RPC request handling
+  - [x] Status reporting
+- [x] MQTT Monitor implementation
+  - [x] RX path monitoring
+  - [x] TX path monitoring
+  - [x] Health monitoring
 
-- [ ] Configuration Management (Filament Admin)
-  - [ ] Server management
-    - [ ] Add/Edit/Delete servers
-    - [ ] Configure monitoring intervals
-    - [ ] Set thresholds for alerts
-  - [ ] MQTT configuration
-    - [ ] Broker settings
-    - [ ] Authentication
-    - [ ] Topic patterns
-  - [ ] Alert rules configuration
-    - [ ] Notification channels
-    - [ ] Alert conditions
-    - [ ] Escalation policies
+### HTTP Implementation
+- [x] ThingsBoard HTTP Connector
+  - [x] Authentication handling
+  - [x] Default configurations
+  - [x] Token management
+- [x] Basic ThingsBoard Requests
+  - [x] Login request
+  - [x] Health check request
+  - [x] System info request
+  - [x] System metrics request
+  - [x] Active sessions request
+- [x] Device Management Requests
+  - [x] List devices (with pagination)
+  - [x] Get single device
+  - [x] Create device
+  - [x] Update device
+  - [x] Delete device
+- [x] Monitoring-Specific Requests
+  - [x] Telemetry HTTP request
+  - [x] RPC HTTP request
+  - [x] Health check request
+- [x] ChirpStack HTTP Integration
+  - [x] Base connector with authentication
+  - [x] Device queue request for downlinks
+
+### Data Transfer Objects
+- [x] ChirpStack Message DTO
+- [x] ThingsBoard Message DTO
+- [x] Message Route DTO
+- [x] Message Payload DTO
+
+### Development Tools & Quality Assurance
+- [x] Error Tracking & Monitoring
+  - [x] Sentry Integration
+    - [x] Configure error grouping
+    - [x] Set up environment-specific tracking
+    - [x] Add custom context for MQTT/HTTP errors
+    - [x] Configure performance monitoring
+    - [x] Set up error notifications
+
+### Administration Dashboard
+- [x] Filament Setup
+  - [x] Install and configure Filament
+  - [x] Set up authentication
+  - [x] Configure theme and branding
+- [x] Instance Management
+  - [x] Server Resource
+    - [x] CRUD operations
+    - [x] Basic validation
+    - [x] Dynamic credentials based on server type
+    - [x] Connection testing
+  - [x] MQTT Broker Resource
+    - [x] CRUD operations
+    - [x] Basic validation
+
+## Pending Tasks 
+
+### Administration Dashboard
+- [ ] Instance Management
+  - [ ] Server Management
+    - [ ] Advanced ThingsBoard features
+      - [ ] Device management
+      - [ ] Credentials management
+    - [ ] Advanced ChirpStack features
+      - [ ] Application management
+      - [ ] Device management
+      - [ ] API key management
+
+- [ ] Test Configuration
+  - [ ] Test Scenario Resource
+    - [ ] Configure test types
+    - [ ] Set intervals and timeouts
+    - [ ] Manage retries
+    - [ ] Set up notifications
+  - [ ] Instance Pairing
+    - [ ] Link ThingsBoard and ChirpStack instances
+    - [ ] Configure routing paths
+    - [ ] Set up test devices
+
+- [ ] Monitoring Dashboard
+  - [ ] System Overview Page
+    - [ ] Health status summary
+    - [ ] Active tests count
+    - [ ] Error rates
+    - [ ] Performance metrics
+  - [ ] Instance Details Page
+    - [ ] Instance health status
+    - [ ] Test history
+    - [ ] Response times
+    - [ ] Error logs
+  - [ ] Test Results Page
+    - [ ] Test execution history
+    - [ ] Success/failure rates
+    - [ ] Response time trends
+    - [ ] Error details
 
 - [ ] Notification System
-  - [ ] Alert channels
+  - [ ] Alert Configuration
+    - [ ] Define alert conditions
+    - [ ] Set thresholds
+    - [ ] Configure recipients
+  - [ ] Notification Channels
     - [ ] Email notifications
-    - [ ] SMS alerts
-    - [ ] Webhook integration
-  - [ ] Alert types
-    - [ ] Service downtime
-    - [ ] Performance degradation
-    - [ ] Certificate expiration
-    - [ ] Error rate threshold
-  - [ ] Alert management
-    - [ ] Acknowledgment system
-    - [ ] Resolution tracking
-    - [ ] Alert history
+    - [ ] Slack integration
+    - [ ] Webhook support
 
-## Infrastructure Setup
-- [x] Configure DNS entry for heartbeat.petermair.cloud
-- [x] Deploy Apache configuration files
-  - [x] Copy apache.conf to /etc/apache2/sites-available/heartbeat.petermair.cloud.conf
-  - [x] Copy servername.conf to /etc/apache2/conf-available/servername.conf
-  - [x] Enable Apache modules (rewrite, ssl)
-  - [x] Enable site configuration (a2ensite)
-  - [x] Enable servername configuration (a2enconf)
-  - [x] Restart Apache
+- [ ] Reporting
+  - [ ] System Reports
+    - [ ] Health status reports
+    - [ ] Performance reports
+    - [ ] Error reports
+  - [ ] Export Options
+    - [ ] CSV export
+    - [ ] PDF reports
+    - [ ] API access
 
-## Database Setup
-- [x] Create MySQL database 'it-service-heart-beat'
-- [x] Create MySQL user 'it-service-heart-beat'
-- [x] Grant necessary permissions to the database user
+### HTTP Implementation
+- [ ] ChirpStack Requests
+  - [ ] Application management
+  - [ ] Device profiles
+  - [ ] Network server configuration
+  - [ ] Gateway management
+- [ ] ThingsBoard Advanced Requests
+  - [ ] Asset management
+  - [ ] Customer management
+  - [ ] Dashboard management
+  - [ ] Rule chain management
 
-## Application Setup
-- [ ] Set up proper file permissions for Laravel
-  - [ ] storage/ directory
-  - [ ] bootstrap/cache/ directory
-- [ ] Install application dependencies (composer install)
-- [ ] Generate application key (if not already done)
-- [ ] Run database migrations
-- [ ] Set up proper environment variables in production
-
-## Technical Implementation
-- [ ] Core Monitoring Service
-  - [ ] Create monitoring service architecture
-  - [ ] Implement health check workers
-  - [ ] Set up background job processing
-  - [ ] Implement data collection and storage
-
-- [ ] API Development
-  - [ ] Create RESTful endpoints for monitoring data
-  - [ ] Implement authentication
-  - [ ] Add rate limiting
-  - [ ] API documentation
-
-## Security
-- [ ] Review SSL certificate configuration
-- [ ] Ensure proper file permissions
-- [ ] Configure backup strategy
-- [ ] Set up logging and monitoring
-
-## Documentation
-- [ ] System Architecture Documentation
-  - [ ] Component diagram
-  - [ ] Data flow documentation
-  - [ ] API documentation
-- [ ] User Documentation
-  - [ ] Setup guide
-  - [ ] Configuration guide
-  - [ ] Alert management guide
-- [ ] Developer Documentation
-  - [ ] Development setup
-  - [ ] Coding standards
-  - [ ] Testing procedures
-
-## Completed 
-### Database and Models
-- [x] Create database migrations for core tables
-  - [x] `server_types` table
-  - [x] `servers` table
-  - [x] `mqtt_brokers` table
-  - [x] `alert_rules` table
-- [x] Create Eloquent models with relationships
-  - [x] `ServerType` model
-  - [x] `Server` model
-  - [x] `MqttBroker` model
-  - [x] `AlertRule` model
-- [x] Create model factories for testing
-  - [x] `ServerTypeFactory`
-  - [x] `ServerFactory`
-  - [x] `MqttBrokerFactory`
-  - [x] `AlertRuleFactory`
-- [x] Create unit tests for models
-  - [x] `ServerTypeTest`
-  - [x] `ServerTest`
-  - [x] `MqttBrokerTest`
-  - [x] `AlertRuleTest`
-
-### Admin Interface
-- [x] Set up Filament Admin Panel
-- [x] Configure basic admin panel settings
-
-## In Progress 
-### Monitoring Services
-- [ ] Create monitoring interface classes
-  - [ ] Base monitoring interface
-  - [ ] ThingsBoard monitor implementation
-  - [ ] ChirpStack monitor implementation
-- [ ] Implement monitoring logic
-  - [ ] Server health checks
-  - [ ] MQTT broker connectivity checks
-  - [ ] SSL certificate monitoring
+### Monitoring Implementation
+- [ ] Test Orchestration
+  - [ ] Test scheduler implementation
+  - [ ] Test execution engine
+  - [ ] Retry mechanism
+  - [ ] Timeout handling
+- [ ] Status Aggregation
+  - [ ] Instance status aggregator
+  - [ ] Service pair status aggregator
+  - [ ] System-wide status aggregator
+- [ ] Health Checks
+  - [ ] MQTT vs HTTP comparison tests
+  - [ ] Direct vs Routing path tests
   - [ ] Response time monitoring
+  - [ ] Service degradation detection
 
-### Alert System
-- [ ] Implement alert processing system
-  - [ ] Alert condition evaluation
-  - [ ] Alert action execution
-  - [ ] Alert history tracking
-- [ ] Create notification channels
-  - [ ] Email notifications
-  - [ ] Slack notifications
-  - [ ] Webhook notifications
+### Development Tools & Quality Assurance
+- [ ] Testing Framework
+  - [ ] Laravel Pest Setup
+    - [ ] Configure test suites
+    - [ ] Set up test database
+    - [ ] Add GitHub Actions for tests
+    - [ ] Write feature tests
+    - [ ] Write unit tests
+    - [ ] Add test coverage reporting
 
-### Admin Interface
-- [ ] Create Filament resources
-  - [ ] Server management
-  - [ ] MQTT broker management
-  - [ ] Alert rule management
-- [ ] Implement dynamic forms
-  - [ ] Server configuration based on type
-  - [ ] Alert rule conditions builder
-  - [ ] Alert action configuration
+- [ ] Code Quality
+  - [ ] Laravel Pint
+    - [ ] Configure coding standards
+    - [ ] Set up pre-commit hooks
+    - [ ] Add to CI pipeline
+    - [ ] Create custom ruleset
+  - [ ] PHPStan
+    - [ ] Configure static analysis
+    - [ ] Set maximum level
+    - [ ] Add custom rules
 
-## Future Enhancements 
-### Monitoring Features
-- [ ] Add support for more IoT platforms
-  - [ ] AWS IoT Core
-  - [ ] Azure IoT Hub
-  - [ ] Google Cloud IoT
-- [ ] Advanced monitoring capabilities
-  - [ ] Device status monitoring
-  - [ ] Message flow analysis
-  - [ ] Performance metrics
+- [ ] Development Tools
+  - [ ] Laravel Telescope
+    - [ ] Configure for local development
+    - [ ] Monitor MQTT messages
+    - [ ] Track HTTP requests
+    - [ ] Track scheduled tasks
+  - [ ] Laravel Debugbar
+    - [ ] Enable for local development
+    - [ ] Add custom metrics for MQTT/HTTP monitoring
 
-### User Interface
-- [ ] Create real-time dashboard
-  - [ ] System status overview
-  - [ ] Alert history and statistics
-  - [ ] Performance metrics graphs
-- [ ] Mobile-responsive design
-- [ ] Dark mode support
+- [ ] Documentation
+  - [ ] API Documentation
+    - [ ] Install Scribe
+    - [ ] Document MQTT endpoints
+    - [ ] Document HTTP endpoints
+    - [ ] Generate OpenAPI spec
+  - [ ] Development Guide
+    - [ ] Setup instructions
+    - [ ] Architecture overview
+    - [ ] Contributing guidelines
+    - [ ] Testing guide
 
-### Integration
-- [ ] API endpoints for external integration
-- [ ] Webhook support for custom actions
-- [ ] Integration with popular monitoring tools
-  - [ ] Grafana
-  - [ ] Prometheus
-  - [ ] ELK Stack
+- [ ] Security
+  - [ ] Security Scanning
+    - [ ] Add dependency scanning
+    - [ ] Configure SAST
+    - [ ] Add security checks to CI
+  - [ ] Rate Limiting
+    - [ ] Configure API rate limits
+    - [ ] Add MQTT rate limiting
+  - [ ] Audit Logging
+    - [ ] Track configuration changes
+    - [ ] Log access attempts
+    - [ ] Monitor failed tests
 
-### Security
-- [ ] Implement role-based access control
-- [ ] Add audit logging
-- [ ] Secure credential storage
-- [ ] API authentication
+- [ ] Performance
+  - [ ] Local Caching
+    - [ ] File-based caching for test results
+    - [ ] In-memory caching for active tests
+  - [ ] Database Optimization
+    - [ ] Add proper indexes
+    - [ ] Optimize queries
+    - [ ] Configure query logging for development
+
+- [ ] DevOps
+  - [ ] Local Development
+    - [ ] Configure local environment
+    - [ ] Add development helpers
+    - [ ] Set up git hooks
+  - [ ] CI/CD Pipeline
+    - [ ] Configure GitHub Actions
+    - [ ] Add deployment stages
+    - [ ] Automate testing
+  - [ ] Monitoring
+    - [ ] Set up health checks
+    - [ ] Configure error tracking
+    - [ ] Add performance monitoring
 
 ### Documentation
-- [ ] API documentation
-- [ ] User manual
-- [ ] Developer guide
-- [ ] Deployment guide
+- [ ] API Documentation
+  - [ ] MQTT endpoints
+  - [ ] HTTP endpoints
+  - [ ] DTO structures
+- [ ] Setup Guide
+  - [ ] Installation instructions
+  - [ ] Configuration guide
+  - [ ] Environment setup
+- [ ] Monitoring Guide
+  - [ ] Test scenario descriptions
+  - [ ] Alert configuration
+  - [ ] Troubleshooting guide
 
-## Technical Debt 
-- [ ] Optimize database queries
-- [ ] Add database indexes
-- [ ] Implement caching strategy
-- [ ] Set up automated deployment
-- [ ] Configure CI/CD pipeline
+### Testing
+- [ ] Unit Tests
+  - [ ] MQTT client tests
+  - [ ] HTTP request tests
+  - [ ] DTO tests
+  - [ ] Monitor tests
+- [ ] Integration Tests
+  - [ ] End-to-end MQTT tests
+  - [ ] End-to-end HTTP tests
+  - [ ] Combined MQTT/HTTP tests
+- [ ] Performance Tests
+  - [ ] Response time benchmarks
+  - [ ] Throughput tests
+  - [ ] Load tests  
+
+### Infrastructure
+- [ ] Deployment
+  - [ ] Docker configuration
+  - [ ] Environment variables
+  - [ ] Service dependencies
+- [ ] CI/CD
+  - [ ] Build pipeline
+  - [ ] Test automation
+  - [ ] Deployment automation
+
+## Implementation Guidelines 
+
+To ensure quality and maintainability, we follow these steps for each task:
+1. Implement features in the order listed in this todo
+2. Review implementation
+   - Code quality check
+   - Feature functionality verification
+3. Commit changes after successful review
+4. Move to the next task in sequence
+
+## Notes
+- Priority should be given to completing the monitoring implementation
+- Testing should be implemented alongside new features
+- Documentation should be updated as features are completed

@@ -92,4 +92,23 @@ class ThingsBoardMqttClient extends MqttClient
 
         $this->sendAttributes($attributes);
     }
+
+    public function sendRpcResponse(string $requestId, array $response): void
+    {
+        $payload = json_encode($response);
+        $this->publish("v1/devices/me/rpc/response/{$requestId}", $payload);
+    }
+
+    public function subscribeToRpc(callable $callback): void
+    {
+        $this->subscribeToRpcRequests(function ($payload, $requestId) use ($callback) {
+            $message = ThingsBoardMessageDto::fromRpc([
+                'deviceName' => $this->device->name ?? 'unknown',
+                'method' => $payload['method'] ?? null,
+                'params' => $payload['params'] ?? []
+            ]);
+            
+            $callback($message, $requestId);
+        });
+    }
 }

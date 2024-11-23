@@ -6,6 +6,51 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property string $name
+ * @property string|null $description
+ * @property int $thingsboard_server_id
+ * @property int $chirpstack_server_id
+ * @property string $application_id
+ * @property string $device_profile_id
+ * @property string $device_eui
+ * @property int $communication_type_id
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $last_seen_at
+ * @property bool $monitoring_enabled
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Server $chirpstackServer
+ * @property-read \App\Models\CommunicationType $communicationType
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\DeviceMonitoringResult> $monitoringResults
+ * @property-read int|null $monitoring_results_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestResult> $testResults
+ * @property-read int|null $test_results_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestScenario> $testScenarios
+ * @property-read int|null $test_scenarios_count
+ * @property-read \App\Models\Server $thingsboardServer
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereApplicationId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereChirpstackServerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereCommunicationTypeId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereDeviceEui($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereDeviceProfileId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereLastSeenAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereMonitoringEnabled($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereThingsboardServerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Device extends Model
 {
     protected $fillable = [

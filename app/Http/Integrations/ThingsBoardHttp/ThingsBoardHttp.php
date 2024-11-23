@@ -6,6 +6,11 @@ use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Contracts\Authenticator;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceTelemetryRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Rpc\DeviceRpcRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceStatusRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\ListDevicesRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\CreateDeviceRequest;
 
 class ThingsBoardHttp extends Connector
 {
@@ -70,7 +75,7 @@ class ThingsBoardHttp extends Connector
      */
     public function deviceTelemetry(string $deviceEui)
     {
-        return $this->get("/api/plugins/telemetry/DEVICE/{$deviceEui}/values/timeseries");
+        return $this->send(new DeviceTelemetryRequest($deviceEui));
     }
 
     /**
@@ -81,7 +86,7 @@ class ThingsBoardHttp extends Connector
      */
     public function deviceRpc(string $deviceEui, array $data)
     {
-        return $this->post("/api/plugins/rpc/oneway/{$deviceEui}", $data);
+        return $this->send(new DeviceRpcRequest($deviceEui, $data));
     }
 
     /**
@@ -91,7 +96,7 @@ class ThingsBoardHttp extends Connector
      */
     public function deviceStatus(string $deviceEui)
     {
-        return $this->get("/api/device/{$deviceEui}/status");
+        return $this->send(new DeviceStatusRequest($deviceEui));
     }
 
     /**
@@ -100,7 +105,7 @@ class ThingsBoardHttp extends Connector
      */
     public function devices()
     {
-        return $this->get("/api/tenant/devices");
+        return $this->send(new ListDevicesRequest());
     }
 
     /**
@@ -110,6 +115,6 @@ class ThingsBoardHttp extends Connector
      */
     public function createDevice(array $data)
     {
-        return $this->post("/api/device", $data);
+        return $this->send(new CreateDeviceRequest($data));
     }
 }

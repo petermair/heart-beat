@@ -6,6 +6,9 @@ use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Contracts\Authenticator;
+use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceMessagesRequest;
+use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceStatusRequest;
+use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceRequest;
 
 class ChirpStackHttp extends Connector
 {
@@ -71,19 +74,7 @@ class ChirpStackHttp extends Connector
      */
     public function deviceMessages(string $applicationId, string $deviceEui)
     {
-        return $this->get("/api/applications/{$applicationId}/devices/{$deviceEui}/messages");
-    }
-
-    /**
-     * Send message to device
-     * @param string $applicationId Application ID
-     * @param string $deviceEui Device EUI
-     * @param array $data Message data
-     * @return \Saloon\Http\Response Response
-     */
-    public function sendDeviceMessage(string $applicationId, string $deviceEui, array $data)
-    {
-        return $this->post("/api/applications/{$applicationId}/devices/{$deviceEui}/messages", $data);
+        return $this->send(new DeviceMessagesRequest($applicationId, $deviceEui));
     }
 
     /**
@@ -94,7 +85,7 @@ class ChirpStackHttp extends Connector
      */
     public function deviceStatus(string $applicationId, string $deviceEui)
     {
-        return $this->get("/api/applications/{$applicationId}/devices/{$deviceEui}/status");
+        return $this->send(new DeviceStatusRequest($applicationId, $deviceEui));
     }
 
     /**
@@ -105,6 +96,6 @@ class ChirpStackHttp extends Connector
      */
     public function device(string $applicationId, string $deviceEui)
     {
-        return $this->get("/api/applications/{$applicationId}/devices/{$deviceEui}");
+        return $this->send(new DeviceRequest($applicationId, $deviceEui));
     }
 }

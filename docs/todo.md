@@ -74,6 +74,21 @@
   - [x] MQTT Broker Resource
     - [x] CRUD operations
     - [x] Basic validation
+- [x] Device Management
+  - [x] Device Resource
+    - [x] CRUD operations
+    - [x] Server configuration
+    - [x] Communication type selection
+    - [x] Monitoring settings
+  - [x] Device Monitoring
+    - [x] Manual testing through UI
+    - [x] Response time tracking
+    - [x] Success rate calculation
+  - [x] Monitoring Results
+    - [x] Detailed monitoring history
+    - [x] Success/failure status tracking
+    - [x] Response times for both platforms
+    - [x] Error message logging
 
 ## Pending Tasks 
 
@@ -200,87 +215,8 @@
     - [ ] Install Scribe
     - [ ] Document MQTT endpoints
     - [ ] Document HTTP endpoints
-    - [ ] Generate OpenAPI spec
-  - [ ] Development Guide
-    - [ ] Setup instructions
-    - [ ] Architecture overview
-    - [ ] Contributing guidelines
-    - [ ] Testing guide
-
-- [ ] Security
-  - [ ] Security Scanning
-    - [ ] Add dependency scanning
-    - [ ] Configure SAST
-    - [ ] Add security checks to CI
-  - [ ] Rate Limiting
-    - [ ] Configure API rate limits
-    - [ ] Add MQTT rate limiting
-  - [ ] Audit Logging
-    - [ ] Track configuration changes
-    - [ ] Log access attempts
-    - [ ] Monitor failed tests
-
-- [ ] Performance
-  - [ ] Local Caching
-    - [ ] File-based caching for test results
-    - [ ] In-memory caching for active tests
-  - [ ] Database Optimization
-    - [ ] Add proper indexes
-    - [ ] Optimize queries
-    - [ ] Configure query logging for development
-
-- [ ] DevOps
-  - [ ] Local Development
-    - [ ] Configure local environment
-    - [ ] Add development helpers
-    - [ ] Set up git hooks
-  - [ ] CI/CD Pipeline
-    - [ ] Configure GitHub Actions
-    - [ ] Add deployment stages
-    - [ ] Automate testing
-  - [ ] Monitoring
-    - [ ] Set up health checks
-    - [ ] Configure error tracking
-    - [ ] Add performance monitoring
-
-### Documentation
-- [ ] API Documentation
-  - [ ] MQTT endpoints
-  - [ ] HTTP endpoints
-  - [ ] DTO structures
-- [ ] Setup Guide
-  - [ ] Installation instructions
-  - [ ] Configuration guide
-  - [ ] Environment setup
-- [ ] Monitoring Guide
-  - [ ] Test scenario descriptions
-  - [ ] Alert configuration
-  - [ ] Troubleshooting guide
-
-### Testing
-- [ ] Unit Tests
-  - [ ] MQTT client tests
-  - [ ] HTTP request tests
-  - [ ] DTO tests
-  - [ ] Monitor tests
-- [ ] Integration Tests
-  - [ ] End-to-end MQTT tests
-  - [ ] End-to-end HTTP tests
-  - [ ] Combined MQTT/HTTP tests
-- [ ] Performance Tests
-  - [ ] Response time benchmarks
-  - [ ] Throughput tests
-  - [ ] Load tests  
-
-### Infrastructure
-- [ ] Deployment
-  - [ ] Docker configuration
-  - [ ] Environment variables
-  - [ ] Service dependencies
-- [ ] CI/CD
-  - [ ] Build pipeline
-  - [ ] Test automation
-  - [ ] Deployment automation
+    - [ ] Add usage examples
+    - [ ] Generate API reference
 
 ## Implementation Guidelines 
 

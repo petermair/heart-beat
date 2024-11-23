@@ -21,6 +21,12 @@ class ChirpStackHttp extends Connector
         return $this->baseUrl;
     }
 
+    public function setBaseUrl(string $baseUrl): static
+    {
+        $this->baseUrl = $baseUrl;
+        return $this;
+    }
+
     protected function defaultAuth(): ?TokenAuthenticator
     {
         return $this->token ? new TokenAuthenticator($this->token) : null;
@@ -30,7 +36,7 @@ class ChirpStackHttp extends Connector
     {
         parent::authenticate($authenticator);
         if ($authenticator instanceof TokenAuthenticator) {
-            $this->token = $authenticator->getToken();
+            $this->token = $authenticator->token;
         }
         return $this;
     }
@@ -55,5 +61,50 @@ class ChirpStackHttp extends Connector
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ];
+    }
+
+    /**
+     * Get device messages
+     * @param string $applicationId Application ID
+     * @param string $deviceEui Device EUI
+     * @return \Saloon\Http\Response Response
+     */
+    public function deviceMessages(string $applicationId, string $deviceEui)
+    {
+        return $this->get("/api/applications/{$applicationId}/devices/{$deviceEui}/messages");
+    }
+
+    /**
+     * Send message to device
+     * @param string $applicationId Application ID
+     * @param string $deviceEui Device EUI
+     * @param array $data Message data
+     * @return \Saloon\Http\Response Response
+     */
+    public function sendDeviceMessage(string $applicationId, string $deviceEui, array $data)
+    {
+        return $this->post("/api/applications/{$applicationId}/devices/{$deviceEui}/messages", $data);
+    }
+
+    /**
+     * Get device status
+     * @param string $applicationId Application ID
+     * @param string $deviceEui Device EUI
+     * @return \Saloon\Http\Response Response
+     */
+    public function deviceStatus(string $applicationId, string $deviceEui)
+    {
+        return $this->get("/api/applications/{$applicationId}/devices/{$deviceEui}/status");
+    }
+
+    /**
+     * Get device info
+     * @param string $applicationId Application ID
+     * @param string $deviceEui Device EUI
+     * @return \Saloon\Http\Response Response
+     */
+    public function device(string $applicationId, string $deviceEui)
+    {
+        return $this->get("/api/applications/{$applicationId}/devices/{$deviceEui}");
     }
 }

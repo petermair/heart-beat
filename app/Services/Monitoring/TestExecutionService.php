@@ -57,10 +57,13 @@ class TestExecutionService
         $config = $scenario->test_configuration;
         $device = $scenario->device;
 
-        $result = $this->monitoringService->checkMqttRxStatus(
+        $result = $this->monitoringService->checkMqttStatus(
             $device,
-            $config['expected_message_count'] ?? 1,
-            $config['message_timeout'] ?? $scenario->timeout_seconds
+            'rx',
+            [
+                'expected_message_count' => $config['expected_message_count'] ?? 1,
+                'message_timeout' => $config['message_timeout'] ?? $scenario->timeout_seconds
+            ]
         );
 
         return DeviceMonitoringResult::create([
@@ -82,10 +85,13 @@ class TestExecutionService
         $config = $scenario->test_configuration;
         $device = $scenario->device;
 
-        $result = $this->monitoringService->checkMqttTxStatus(
+        $result = $this->monitoringService->checkMqttStatus(
             $device,
-            $config['message_payload'] ?? 'test',
-            $config['expect_ack'] ?? true
+            'tx',
+            [
+                'message_payload' => $config['message_payload'] ?? 'test',
+                'expect_ack' => $config['expect_ack'] ?? true
+            ]
         );
 
         return DeviceMonitoringResult::create([
@@ -129,9 +135,12 @@ class TestExecutionService
         $config = $scenario->test_configuration;
         $device = $scenario->device;
 
-        $result = $this->monitoringService->checkTelemetryData(
+        $result = $this->monitoringService->checkMqttStatus(
             $device,
-            $config['data_points'] ?? ['temperature', 'humidity']
+            'telemetry',
+            [
+                'data_points' => $config['data_points'] ?? ['temperature', 'humidity']
+            ]
         );
 
         return DeviceMonitoringResult::create([
@@ -152,10 +161,13 @@ class TestExecutionService
         $config = $scenario->test_configuration;
         $device = $scenario->device;
 
-        $result = $this->monitoringService->checkRpcCall(
+        $result = $this->monitoringService->checkMqttStatus(
             $device,
-            $config['method'] ?? 'getValue',
-            $config['params'] ?? []
+            'rpc',
+            [
+                'method' => $config['method'] ?? 'getValue',
+                'params' => $config['params'] ?? []
+            ]
         );
 
         return DeviceMonitoringResult::create([

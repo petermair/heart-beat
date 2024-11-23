@@ -12,18 +12,23 @@
         "laravel/tinker": "^2.9",
         "php-mqtt/client": "^2.1",
         "saloonphp/laravel-plugin": "^3.5",
+        "saloonphp/pagination-plugin": "^2.0",
         "saloonphp/saloon": "^3.10",
         "sentry/sentry-laravel": "^4.10"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.2",
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.0",
         "laravel/pail": "^1.1",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.1",
+        "nunomaduro/larastan": "^3.0",
         "pestphp/pest": "^3.5",
         "pestphp/pest-plugin-laravel": "^3.0",
+        "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0.1"
     },
     "autoload": {
@@ -58,7 +63,8 @@
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
-        ]
+        ],
+        "phpstan": "vendor/bin/phpstan analyse"
     },
     "extra": {
         "laravel": {

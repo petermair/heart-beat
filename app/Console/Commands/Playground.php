@@ -23,12 +23,8 @@ class Playground extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
-        try {
-            $this->functionFailsForSure();
-          } catch (\Throwable $exception) {
-            \Sentry\captureException($exception);
-          }
+        $this->info('Playground command is ready for testing.');
     }
 }

@@ -4,16 +4,18 @@ namespace App\Http\Integrations\ThingsBoardHttp\Requests\Devices;
 
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
-use Saloon\PaginationPlugin\Contracts\Paginatable;
-use Saloon\PaginationPlugin\CursorPaginator;
+use Saloon\Http\Response;
+use Saloon\PaginationPlugin\Contracts\HasPagination;
+use Saloon\PaginationPlugin\AbstractPaginator;
+use Saloon\PaginationPlugin\PagedPaginator;
 
-class DevicesHttpRequest extends Request implements Paginatable
+class DevicesHttpRequest extends Request implements HasPagination
 {
     protected Method $method = Method::GET;
 
     public function __construct(
-        protected ?int $pageSize = 10,
-        protected ?string $page = null,
+        protected int $pageSize = 10,
+        protected int $page = 0,
         protected ?string $textSearch = null,
         protected ?string $sortProperty = null,
         protected ?string $sortOrder = null,
@@ -21,7 +23,7 @@ class DevicesHttpRequest extends Request implements Paginatable
 
     public function resolveEndpoint(): string
     {
-        return '/api/devices';
+        return '/api/tenant/devices';
     }
 
     protected function defaultQuery(): array
@@ -35,12 +37,34 @@ class DevicesHttpRequest extends Request implements Paginatable
         ]);
     }
 
-    public function createPaginator(): CursorPaginator
+    public function hasNextPage(Response $response): ?bool
     {
-        return new CursorPaginator(
-            $this,
-            $this->pageSize ?? 10,
-            'page'
-        );
+        $data = $response->json();
+        return isset($data['hasNext']) ? $data['hasNext'] : false;
     }
+
+    public function nextPageData(Response $response): array
+    {
+        return [
+            'page' => $this->page + 1,
+            'pageSize' => $this->pageSize,
+        ];
+    }
+
+    public function paginate(Request $request): PagedPaginator
+    {
+        return new class(connector: $this, request: $request) extends PagedPaginator
+        {
+            protected function isLastPage(Response $response): bool
+            {
+                $data = $response->json();
+                return !($data['hasNext'] ?? false);
+            }
+            
+            protected function getPageItems(Response $response, Request $request): array
+            {
+                return $response->json('data');
+            }
+        };
+    }    
 }

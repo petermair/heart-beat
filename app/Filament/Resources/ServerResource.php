@@ -18,6 +18,7 @@ use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DevicesHttpRequest;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceCreateHttpRequest;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceDeleteHttpRequest;
 use App\Filament\Resources\ServerResource\Pages;
+use Filament\Notifications\Notification;
 
 class ServerResource extends Resource
 {
@@ -135,12 +136,13 @@ class ServerResource extends Resource
                             ->content(function (Server $record) {
                                 try {
                                     $client = new ThingsBoardHttp(
-                                        baseUrl: $record->url,
-                                        username: $record->credentials['username'],
-                                        password: $record->credentials['password']
+                                        baseUrl: $record->url
                                     );
 
-                                    $loginResponse = $client->send(new LoginHttpRequest());
+                                    $loginResponse = $client->send(new LoginHttpRequest([
+                                        'username' => $record->credentials['username'],
+                                        'password' => $record->credentials['password']
+                                    ]));
                                     if (!$loginResponse->successful()) {
                                         return 'Failed to authenticate with ThingsBoard';
                                     }
@@ -181,35 +183,36 @@ class ServerResource extends Resource
                     ->modalSubmitActionLabel('Create Device')
                     ->action(function (array $data, Server $record): void {
                         $client = new ThingsBoardHttp(
-                            baseUrl: $record->url,
-                            username: $record->credentials['username'],
-                            password: $record->credentials['password']
+                            baseUrl: $record->url
                         );
 
                         try {
-                            $loginResponse = $client->send(new LoginHttpRequest());
+                            $loginResponse = $client->send(new LoginHttpRequest([
+                                'username' => $record->credentials['username'],
+                                'password' => $record->credentials['password']
+                            ]));
                             if (!$loginResponse->successful()) {
                                 throw new \Exception('Failed to authenticate with ThingsBoard');
                             }
 
-                            $createResponse = $client->send(new DeviceCreateHttpRequest(
-                                name: $data['device_name'],
-                                type: $data['device_type'],
-                                label: $data['label'] ?? null
-                            ));
+                            $createResponse = $client->send(new DeviceCreateHttpRequest([
+                                'name' => $data['device_name'],
+                                'type' => $data['device_type'],
+                                'label' => $data['label'] ?? null,
+                            ]));
 
                             if (!$createResponse->successful()) {
                                 throw new \Exception('Failed to create device');
                             }
 
-                            Forms\Notifications::make()
+                            Notification::make()
                                 ->success()
                                 ->title('Device Created')
                                 ->body("Successfully created device {$data['device_name']}")
                                 ->send();
 
                         } catch (\Exception $e) {
-                            Forms\Notifications::make()
+                            Notification::make()
                                 ->danger()
                                 ->title('Failed to Create Device')
                                 ->body($e->getMessage())
@@ -221,13 +224,14 @@ class ServerResource extends Resource
                     ->modalDescription('Are you sure you want to delete this device? This action cannot be undone.')
                     ->action(function (array $data, Server $record): void {
                         $client = new ThingsBoardHttp(
-                            baseUrl: $record->url,
-                            username: $record->credentials['username'],
-                            password: $record->credentials['password']
+                            baseUrl: $record->url
                         );
 
                         try {
-                            $loginResponse = $client->send(new LoginHttpRequest());
+                            $loginResponse = $client->send(new LoginHttpRequest([
+                                'username' => $record->credentials['username'],
+                                'password' => $record->credentials['password']
+                            ]));
                             if (!$loginResponse->successful()) {
                                 throw new \Exception('Failed to authenticate with ThingsBoard');
                             }
@@ -240,14 +244,14 @@ class ServerResource extends Resource
                                 throw new \Exception('Failed to delete device');
                             }
 
-                            Forms\Notifications::make()
+                            Notification::make()
                                 ->success()
                                 ->title('Device Deleted')
                                 ->body('Successfully deleted the device')
                                 ->send();
 
                         } catch (\Exception $e) {
-                            Forms\Notifications::make()
+                            Notification::make()
                                 ->danger()
                                 ->title('Failed to Delete Device')
                                 ->body($e->getMessage())

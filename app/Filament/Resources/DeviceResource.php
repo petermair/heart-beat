@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DeviceResource\Pages;
 use App\Filament\Resources\DeviceResource\RelationManagers;
+use App\Jobs\DeviceMonitoringJob;
 use App\Models\Device;
 use App\Models\Server;
 use Filament\Forms;

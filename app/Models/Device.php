@@ -48,6 +48,15 @@ class Device extends Model
         return $this->hasMany(DeviceMonitoringResult::class);
     }
 
+    public function testScenarios(): HasMany
+    {
+        return $this->hasMany(TestScenario::class);
+    }
+    public function testResults(): HasMany
+    {
+        return $this->hasMany(TestResult::class);
+    }
+
     public function latestMonitoringResult()
     {
         return $this->monitoringResults()->latest()->first();

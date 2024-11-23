@@ -4,12 +4,12 @@ namespace App\Http\Integrations\ThingsBoardHttp;
 
 use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AcceptsJson;
-use Saloon\Traits\Auth\RequiresTokenAuth;
+use Saloon\Http\Auth\TokenAuthenticator;
+use Saloon\Contracts\Authenticator;
 
 class ThingsBoardHttp extends Connector
 {
     use AcceptsJson;
-    use RequiresTokenAuth;
 
     public function __construct(
         protected string $baseUrl,
@@ -19,6 +19,26 @@ class ThingsBoardHttp extends Connector
     public function resolveBaseUrl(): string
     {
         return $this->baseUrl;
+    }
+
+    protected function defaultAuth(): ?TokenAuthenticator
+    {
+        return $this->token ? new TokenAuthenticator($this->token) : null;
+    }
+
+    public function authenticate(Authenticator $authenticator): static
+    {
+        parent::authenticate($authenticator);
+        if ($authenticator instanceof TokenAuthenticator) {
+            $this->token = $authenticator->getToken();
+        }
+        return $this;
+    }
+
+    public function withToken(string $token): static
+    {
+        $this->token = $token;
+        return $this->authenticate(new TokenAuthenticator($token));
     }
 
     protected function defaultConfig(): array

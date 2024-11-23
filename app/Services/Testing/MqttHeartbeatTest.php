@@ -3,37 +3,62 @@
 namespace App\Services\Testing;
 
 use App\Services\Mqtt\ThingsBoardMqttClient;
+use Carbon\Carbon;
 
-class MqttHeartbeatTest extends TestCase
+class MqttHeartbeatTest implements TestInterface
 {
     protected ThingsBoardMqttClient $mqttClient;
     protected string $requestId;
     protected bool $responseReceived = false;
+    protected Carbon $startTime;
+    protected ?string $errorMessage = null;
+    protected ?float $responseTime = null;
 
-    public function execute(): void
+    public function __construct(ThingsBoardMqttClient $mqttClient)
     {
-        $this->requestId = uniqid('hb_', true);
-        
-        // Send heart-beat message
-        $this->mqttClient->sendTelemetry([
-            'heartbeat' => [
-                'requestId' => $this->requestId,
-                'timestamp' => now()->toIso8601String(),
-                'type' => 'mqtt-heartbeat'
-            ]
-        ]);
+        $this->mqttClient = $mqttClient;
+    }
 
-        // Wait for response with timeout
-        $timeout = now()->addSeconds($this->getTimeout());
-        while (!$this->responseReceived && now()->lt($timeout)) {
-            usleep(100000); // 100ms
+    public function execute(): TestResult
+    {
+        try {
+            $this->startTime = now();
+            $this->requestId = uniqid('hb_', true);
+            
+            // Send heart-beat message
+            $this->mqttClient->sendTelemetry([
+                'heartbeat' => [
+                    'requestId' => $this->requestId,
+                    'timestamp' => now()->toIso8601String(),
+                    'type' => 'mqtt-heartbeat'
+                ]
+            ]);
+
+            // Wait for response with timeout
+            $timeout = now()->addSeconds(30);
+            while (!$this->responseReceived && now()->lt($timeout)) {
+                usleep(100000); // 100ms
+            }
+
+            if (!$this->responseReceived) {
+                throw new \RuntimeException('Heart-beat response timeout');
+            }
+
+            return new TestResult(
+                success: true,
+                responseTime: $this->responseTime
+            );
+        } catch (\Exception $e) {
+            return new TestResult(
+                success: false,
+                errorMessage: $e->getMessage()
+            );
         }
+    }
 
-        if (!$this->responseReceived) {
-            throw new \RuntimeException('Heart-beat response timeout');
-        }
-
-        $this->setStatus('completed');
+    public function getName(): string
+    {
+        return 'MQTT Heartbeat Test';
     }
 
     /**
@@ -43,7 +68,7 @@ class MqttHeartbeatTest extends TestCase
     {
         if ($response['heartbeat']['requestId'] === $this->requestId) {
             $this->responseReceived = true;
-            $this->addResult('responseTime', now()->diffInMilliseconds($this->startTime));
+            $this->responseTime = now()->diffInMilliseconds($this->startTime);
         }
     }
 }

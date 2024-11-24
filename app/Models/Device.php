@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property string|null $description
@@ -32,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestScenario> $testScenarios
  * @property-read int|null $test_scenarios_count
  * @property-read \App\Models\Server $thingsboardServer
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device query()
@@ -49,10 +48,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereThingsboardServerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereUpdatedAt($value)
+ *
  * @property string|null $device_type
  * @property array|null $credentials
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereCredentials($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereDeviceType($value)
+ *
  * @mixin \Eloquent
  */
 class Device extends Model
@@ -70,14 +72,14 @@ class Device extends Model
         'last_seen_at',
         'monitoring_enabled',
         'device_type',
-        'credentials'
+        'credentials',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'monitoring_enabled' => 'boolean',
         'last_seen_at' => 'datetime',
-        'credentials' => 'encrypted:array'
+        'credentials' => 'encrypted:array',
     ];
 
     public function thingsboardServer(): BelongsTo
@@ -104,6 +106,7 @@ class Device extends Model
     {
         return $this->hasMany(TestScenario::class);
     }
+
     public function testResults(): HasMany
     {
         return $this->hasMany(TestResult::class);
@@ -122,6 +125,7 @@ class Device extends Model
         }
 
         $successful = $this->monitoringResults()->where('success', true)->count();
+
         return round(($successful / $total) * 100, 2);
     }
 

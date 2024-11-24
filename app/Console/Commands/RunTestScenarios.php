@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 class RunTestScenarios extends Command
 {
     protected $signature = 'test-scenarios:run {--scenario=} {--force}';
+
     protected $description = 'Run test scenarios to monitor service health';
 
     public function handle(TestExecutionService $testExecutionService): int
@@ -21,8 +22,9 @@ class RunTestScenarios extends Command
             if ($scenarioId) {
                 // Run specific scenario
                 $scenario = TestScenario::findOrFail($scenarioId);
-                if (!$scenario->is_active && !$force) {
+                if (! $scenario->is_active && ! $force) {
                     $this->warn("Scenario {$scenario->id} is not active. Use --force to run anyway.");
+
                     return 0;
                 }
                 $testExecutionService->executeScenario($scenario);
@@ -43,6 +45,7 @@ class RunTestScenarios extends Command
                 'scenario_id' => $scenarioId,
             ]);
             $this->error($e->getMessage());
+
             return 1;
         }
     }

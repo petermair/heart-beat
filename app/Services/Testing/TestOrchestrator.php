@@ -8,11 +8,11 @@ use Illuminate\Support\Collection;
 class TestOrchestrator
 {
     protected Collection $activeTests;
-    
+
     public function __construct(
         protected InstanceManager $instanceManager
     ) {
-        $this->activeTests = new Collection();
+        $this->activeTests = new Collection;
     }
 
     /**
@@ -31,10 +31,10 @@ class TestOrchestrator
     protected function scheduleTest(array $scenario): void
     {
         $test = $this->createTest($scenario);
-        
+
         // Add to active tests
         $this->activeTests->put($test->getId(), $test);
-        
+
         // Schedule based on interval
         $this->schedule($test, $scenario['interval']);
     }
@@ -66,7 +66,7 @@ class TestOrchestrator
     public function executeTest(string $testId): void
     {
         $test = $this->activeTests->get($testId);
-        if (!$test) {
+        if (! $test) {
             return;
         }
 

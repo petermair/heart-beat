@@ -9,11 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\PrettyJson;
 use InvadersXX\FilamentJsoneditor\Forms\JSONEditor;
-use Novadaemon\FilamentPrettyJson\PrettyJson as FilamentPrettyJsonPrettyJson;
 
 class TestScenarioNotificationSettingResource extends Resource
 {
@@ -22,7 +18,7 @@ class TestScenarioNotificationSettingResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-bell';
 
     protected static ?string $navigationGroup = 'Test Scenarios';
-    
+
     protected static ?string $navigationLabel = 'Notifications';
 
     protected static ?string $modelLabel = 'Notification';
@@ -39,11 +35,11 @@ class TestScenarioNotificationSettingResource extends Resource
                 Forms\Components\Select::make('notification_setting_id')
                     ->relationship('notificationSetting', 'name')
                     ->required(),
-                    JSONEditor::make('settings')
+                JSONEditor::make('settings')
                     ->label('Configuration')
                     ->required()
                     ->columnSpan('full'),
-                    
+
                 Forms\Components\DateTimePicker::make('last_notification_at')
                     ->label('Last Notification At'),
             ]);
@@ -77,14 +73,14 @@ class TestScenarioNotificationSettingResource extends Resource
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
-    
+
     public static function getRelations(): array
     {
         return [
             //
         ];
     }
-    
+
     public static function getPages(): array
     {
         return [
@@ -92,5 +88,5 @@ class TestScenarioNotificationSettingResource extends Resource
             'create' => Pages\CreateTestScenarioNotificationSetting::route('/test-scenarios/notifications/create'),
             'edit' => Pages\EditTestScenarioNotificationSetting::route('/test-scenarios/notifications/{record}/edit'),
         ];
-    }    
+    }
 }

@@ -4,12 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\TestScenario;
-use App\Models\NotificationSetting;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property string $display_name
@@ -22,6 +18,7 @@ use App\Models\NotificationSetting;
  * @property-read int|null $notification_settings_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, TestScenario> $testScenarios
  * @property-read int|null $test_scenarios_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType query()
@@ -33,6 +30,7 @@ use App\Models\NotificationSetting;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereIsActive($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class NotificationType extends Model
@@ -84,7 +82,7 @@ class NotificationType extends Model
 
         // Basic validation that required fields are present
         foreach ($this->configuration_schema as $field => $rules) {
-            if (($rules['required'] ?? false) && !isset($configuration[$field])) {
+            if (($rules['required'] ?? false) && ! isset($configuration[$field])) {
                 return false;
             }
         }

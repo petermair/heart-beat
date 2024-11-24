@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ServiceFailurePatternsSeeder extends Seeder
@@ -25,8 +24,8 @@ class ServiceFailurePatternsSeeder extends Seeder
                     6 => ['fails' => true,  'is_optional' => false],
                     7 => ['fails' => false, 'is_optional' => false],
                     8 => ['fails' => true,  'is_optional' => true],
-                    9 => ['fails' => false, 'is_optional' => true]
-                ]
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
             ],
             [
                 'service_name' => 'ChirpStack',
@@ -40,8 +39,8 @@ class ServiceFailurePatternsSeeder extends Seeder
                     6 => ['fails' => false, 'is_optional' => false],
                     7 => ['fails' => true,  'is_optional' => false],
                     8 => ['fails' => false, 'is_optional' => true],
-                    9 => ['fails' => true,  'is_optional' => true]
-                ]
+                    9 => ['fails' => true,  'is_optional' => true],
+                ],
             ],
             [
                 'service_name' => 'MQTT Broker',
@@ -55,8 +54,8 @@ class ServiceFailurePatternsSeeder extends Seeder
                     6 => ['fails' => true,  'is_optional' => false],
                     7 => ['fails' => true,  'is_optional' => false],
                     8 => ['fails' => false, 'is_optional' => true],
-                    9 => ['fails' => false, 'is_optional' => true]
-                ]
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
             ],
             [
                 'service_name' => 'LoRa TX',
@@ -70,8 +69,8 @@ class ServiceFailurePatternsSeeder extends Seeder
                     6 => ['fails' => false, 'is_optional' => false],
                     7 => ['fails' => false, 'is_optional' => false],
                     8 => ['fails' => false, 'is_optional' => true],
-                    9 => ['fails' => false, 'is_optional' => true]
-                ]
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
             ],
             [
                 'service_name' => 'LoRa RX',
@@ -85,15 +84,15 @@ class ServiceFailurePatternsSeeder extends Seeder
                     6 => ['fails' => false, 'is_optional' => false],
                     7 => ['fails' => false, 'is_optional' => false],
                     8 => ['fails' => false, 'is_optional' => true],
-                    9 => ['fails' => false, 'is_optional' => true]
-                ]
-            ]
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
+            ],
         ];
 
         foreach ($patterns as $patternData) {
             $pattern = \App\Models\ServiceFailurePattern::create([
                 'service_name' => $patternData['service_name'],
-                'description' => $patternData['description']
+                'description' => $patternData['description'],
             ]);
 
             foreach ($patternData['flows'] as $flowNumber => $flowData) {
@@ -101,7 +100,7 @@ class ServiceFailurePatternsSeeder extends Seeder
                     'pattern_id' => $pattern->id,
                     'flow_number' => $flowNumber,
                     'fails' => $flowData['fails'],
-                    'is_optional' => $flowData['is_optional']
+                    'is_optional' => $flowData['is_optional'],
                 ]);
             }
         }

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Services\ServiceFailure;
 
+use App\Models\ServiceFailurePattern;
 use App\Services\ServiceFailure\ServiceFailureAnalyzer;
 use Database\Seeders\ServiceFailurePatternsSeeder;
-use App\Models\ServiceFailurePattern;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,16 +16,16 @@ class ServiceFailureAnalyzerTest extends TestCase
 
     protected function setUp(): void
     {
-        parent::setUp();        
-        
+        parent::setUp();
+
         // Seed our matrix data
         $this->seed(ServiceFailurePatternsSeeder::class);
-        
+
         // Debug: Check if patterns were seeded
         dump('Number of patterns:', ServiceFailurePattern::count());
         dump('First pattern flows:', ServiceFailurePattern::first()?->flows()->count());
-        
-        $this->analyzer = new ServiceFailureAnalyzer();
+
+        $this->analyzer = new ServiceFailureAnalyzer;
     }
 
     /** @test */

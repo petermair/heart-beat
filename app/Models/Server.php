@@ -2,14 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property int $server_type_id
@@ -28,6 +26,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property-read int|null $health_checks_count
  * @property-read \App\Models\MqttBroker|null $mqttBroker
  * @property-read \App\Models\ServerType $serverType
+ *
  * @method static \Database\Factories\ServerFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server newQuery()
@@ -44,6 +43,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server whereSettings($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server whereUrl($value)
+ *
  * @mixin \Eloquent
  */
 class Server extends Model
@@ -98,7 +98,7 @@ class Server extends Model
     {
         $requiredSettings = $this->serverType->required_settings ?? [];
         $currentSettings = $this->settings ?? [];
-        
+
         return empty(array_diff($requiredSettings, array_keys($currentSettings)));
     }
 
@@ -106,7 +106,7 @@ class Server extends Model
     {
         $requiredCredentials = $this->serverType->required_credentials ?? [];
         $currentCredentials = $this->credentials ?? [];
-        
+
         return empty(array_diff($requiredCredentials, array_keys($currentCredentials)));
     }
 }

@@ -30,7 +30,7 @@ class MessagePayloadDto
             'data' => $this->data,
             'deviceEui' => $this->deviceEui,
             'rssi' => $this->rssi,
-            'snr' => $this->snr
+            'snr' => $this->snr,
         ];
     }
 }

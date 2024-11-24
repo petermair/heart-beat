@@ -23,13 +23,13 @@ class NotificationTypeSeeder extends Seeder
                         'email' => [
                             'type' => 'string',
                             'format' => 'email',
-                            'title' => 'Email Address'
+                            'title' => 'Email Address',
                         ],
                         'name' => [
                             'type' => 'string',
-                            'title' => 'Recipient Name'
-                        ]
-                    ]
+                            'title' => 'Recipient Name',
+                        ],
+                    ],
                 ]),
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -44,19 +44,19 @@ class NotificationTypeSeeder extends Seeder
                         'url' => [
                             'type' => 'string',
                             'format' => 'uri',
-                            'title' => 'Webhook URL'
+                            'title' => 'Webhook URL',
                         ],
                         'method' => [
                             'type' => 'string',
                             'enum' => ['POST', 'PUT'],
                             'default' => 'POST',
-                            'title' => 'HTTP Method'
+                            'title' => 'HTTP Method',
                         ],
                         'headers' => [
                             'type' => 'object',
-                            'title' => 'HTTP Headers'
-                        ]
-                    ]
+                            'title' => 'HTTP Headers',
+                        ],
+                    ],
                 ]),
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -71,17 +71,17 @@ class NotificationTypeSeeder extends Seeder
                         'phone_number' => [
                             'type' => 'string',
                             'title' => 'Phone Number',
-                            'pattern' => '^\+[1-9]\d{1,14}$'
+                            'pattern' => '^\+[1-9]\d{1,14}$',
                         ],
                         'country_code' => [
                             'type' => 'string',
-                            'title' => 'Country Code'
-                        ]
-                    ]
+                            'title' => 'Country Code',
+                        ],
+                    ],
                 ]),
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]
+            ],
         ]);
     }
 }

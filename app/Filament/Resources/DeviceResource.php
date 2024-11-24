@@ -9,11 +9,11 @@ use App\Models\Device;
 use App\Models\Server;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Notifications\Notification;
 
 class DeviceResource extends Resource
 {
@@ -53,16 +53,14 @@ class DeviceResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('thingsboard_server_id')
                             ->label('ThingsBoard Server')
-                            ->options(fn () => Server::whereHas('serverType', fn ($query) => 
-                                $query->where('name', 'thingsboard')
+                            ->options(fn () => Server::whereHas('serverType', fn ($query) => $query->where('name', 'thingsboard')
                             )->pluck('name', 'id'))
                             ->required()
                             ->searchable(),
 
                         Forms\Components\Select::make('chirpstack_server_id')
                             ->label('ChirpStack Server')
-                            ->options(fn () => Server::whereHas('serverType', fn ($query) => 
-                                $query->where('name', 'chirpstack')
+                            ->options(fn () => Server::whereHas('serverType', fn ($query) => $query->where('name', 'chirpstack')
                             )->pluck('name', 'id'))
                             ->required()
                             ->searchable(),
@@ -118,19 +116,17 @@ class DeviceResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('success_rate')
                     ->label('Success Rate')
-                    ->getStateUsing(fn (Device $record): string => $record->getSuccessRate() . '%')
-                    ->color(fn (Device $record): string => 
-                        match(true) {
-                            $record->getSuccessRate() >= 90 => 'success',
-                            $record->getSuccessRate() >= 70 => 'warning',
-                            default => 'danger',
-                        }
+                    ->getStateUsing(fn (Device $record): string => $record->getSuccessRate().'%')
+                    ->color(fn (Device $record): string => match (true) {
+                        $record->getSuccessRate() >= 90 => 'success',
+                        $record->getSuccessRate() >= 70 => 'warning',
+                        default => 'danger',
+                    }
                     ),
                 Tables\Columns\TextColumn::make('avg_response_time')
                     ->label('Avg Response (ms)')
-                    ->getStateUsing(fn (Device $record): string => 
-                        $record->getAverageResponseTime() ? 
-                        number_format($record->getAverageResponseTime(), 2) : 
+                    ->getStateUsing(fn (Device $record): string => $record->getAverageResponseTime() ?
+                        number_format($record->getAverageResponseTime(), 2) :
                         'N/A'
                     ),
                 Tables\Columns\IconColumn::make('is_active')
@@ -169,7 +165,7 @@ class DeviceResource extends Resource
                             foreach ($records as $record) {
                                 DeviceMonitoringJob::dispatch($record);
                             }
-                            
+
                             Notification::make()
                                 ->title('Tests Started')
                                 ->body('Device monitoring tests have been initiated.')

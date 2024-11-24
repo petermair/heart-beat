@@ -2,16 +2,21 @@
 
 namespace App\Services\Mqtt;
 
-use PhpMqtt\Client\MqttClient as PhpMqttClient;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\Exceptions\MqttClientException;
+use PhpMqtt\Client\MqttClient as PhpMqttClient;
 
 class MqttClient
 {
     private ?PhpMqttClient $client;
+
     private ConnectionSettings $settings;
+
     private string $clientId;
+
     private array $config;
+
+    private bool $hasMessage = false;
 
     public function __construct(array $config, ?PhpMqttClient $client = null)
     {
@@ -42,7 +47,7 @@ class MqttClient
             );
         }
 
-        if (!$this->client->isConnected()) {
+        if (! $this->client->isConnected()) {
             try {
                 $this->client->connect($this->settings, true);
             } catch (MqttClientException $e) {
@@ -73,7 +78,9 @@ class MqttClient
         try {
             $this->ensureConnection();
             $this->client->subscribe($topic, function ($topic, $message) use ($callback) {
+                $this->hasMessage = true;
                 $callback($topic, $message);
+                $this->hasMessage = false;
             }, $qos);
         } catch (MqttClientException $e) {
             throw new \RuntimeException("Failed to subscribe to topic: {$e->getMessage()}", 0, $e);
@@ -82,7 +89,7 @@ class MqttClient
 
     private function ensureConnection(): void
     {
-        if (!$this->client || !$this->client->isConnected()) {
+        if (! $this->client || ! $this->client->isConnected()) {
             $this->connect();
         }
     }
@@ -94,6 +101,17 @@ class MqttClient
             $this->client->loop($allowSleep);
         } catch (MqttClientException $e) {
             throw new \RuntimeException("MQTT loop error: {$e->getMessage()}", 0, $e);
+        }
+    }
+
+    public function hasMessage(): bool
+    {
+        try {
+            $this->ensureConnection();
+            $this->client->loop(false);
+            return $this->client->hasPendingMessages();
+        } catch (MqttClientException $e) {
+            throw new \RuntimeException("Failed to check for messages: {$e->getMessage()}", 0, $e);
         }
     }
 }

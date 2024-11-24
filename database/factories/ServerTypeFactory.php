@@ -18,7 +18,7 @@ class ServerTypeFactory extends Factory
     {
         return [
             'name' => fake()->unique()->word(),
-            'interface_class' => 'App\\Services\\Monitoring\\' . fake()->word() . 'Monitor',
+            'interface_class' => 'App\\Services\\Monitoring\\'.fake()->word().'Monitor',
             'description' => fake()->sentence(),
             'required_settings' => ['api_endpoint', 'port'],
             'required_credentials' => ['username', 'password'],

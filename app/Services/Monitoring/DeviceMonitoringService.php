@@ -17,13 +17,14 @@ class DeviceMonitoringService
 
     /**
      * Monitor a specific device
-     * @param Device $device The device to monitor
-     * @param string $testType The type of test being performed
+     *
+     * @param  Device  $device  The device to monitor
+     * @param  string  $testType  The type of test being performed
      * @return DeviceMonitoringResult The monitoring result
      */
     public function monitorDevice(Device $device, string $testType = 'scheduled'): DeviceMonitoringResult
     {
-        if (!$device->is_active || !$device->monitoring_enabled) {
+        if (! $device->is_active || ! $device->monitoring_enabled) {
             return $this->createResult($device, false, 'Device is not active or monitoring is disabled', $testType);
         }
 
@@ -42,9 +43,11 @@ class DeviceMonitoringService
 
     /**
      * Check device status based on communication type
-     * @param Device $device The device to check
-     * @param string $testType The type of test being performed
+     *
+     * @param  Device  $device  The device to check
+     * @param  string  $testType  The type of test being performed
      * @return DeviceMonitoringResult The monitoring result
+     *
      * @throws \InvalidArgumentException When communication type is not supported
      */
     public function checkDeviceStatus(Device $device, string $testType): DeviceMonitoringResult
@@ -60,15 +63,16 @@ class DeviceMonitoringService
 
     /**
      * Unified MQTT status check method
-     * @param Device $device The device to check
-     * @param string $type The type of check (rx, tx, telemetry, rpc)
-     * @param array $options Additional options for the check
+     *
+     * @param  Device  $device  The device to check
+     * @param  string  $type  The type of check (rx, tx, telemetry, rpc)
+     * @param  array  $options  Additional options for the check
      * @return array The check result
      */
     public function checkMqttStatus(Device $device, string $testType, array $options = []): array
     {
         $startTime = microtime(true);
-        
+
         try {
             $result = match ($testType) {
                 'rx' => $this->chirpStackService->checkDeviceRxMessages(
@@ -99,8 +103,8 @@ class DeviceMonitoringService
                 default => throw new \InvalidArgumentException("Unsupported MQTT check type: {$testType}"),
             };
 
-            $responseTime = (int)((microtime(true) - $startTime) * 1000);
-            
+            $responseTime = (int) ((microtime(true) - $startTime) * 1000);
+
             return array_merge($result, [
                 'response_time_ms' => $responseTime,
                 'success' => $result['success'] ?? false,
@@ -110,15 +114,16 @@ class DeviceMonitoringService
             return [
                 'success' => false,
                 'error_message' => $e->getMessage(),
-                'response_time_ms' => (int)((microtime(true) - $startTime) * 1000),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
             ];
         }
     }
 
     /**
      * Check device status via HTTP
-     * @param Device $device The device to check
-     * @param string $testType The type of test being performed
+     *
+     * @param  Device  $device  The device to check
+     * @param  string  $testType  The type of test being performed
      * @return DeviceMonitoringResult The monitoring result
      */
     public function checkHttpStatus(Device $device, string $testType): DeviceMonitoringResult
@@ -130,7 +135,7 @@ class DeviceMonitoringService
             $device->application_id,
             $device->device_eui
         );
-        $chirpStackTime = (int)((microtime(true) - $startTime) * 1000);
+        $chirpStackTime = (int) ((microtime(true) - $startTime) * 1000);
 
         $startTime = microtime(true);
         // Check ThingsBoard device status via HTTP
@@ -138,7 +143,7 @@ class DeviceMonitoringService
             $device->thingsboardServer,
             $device->device_eui
         );
-        $thingsBoardTime = (int)((microtime(true) - $startTime) * 1000);
+        $thingsBoardTime = (int) ((microtime(true) - $startTime) * 1000);
 
         return $this->createResult(
             device: $device,
@@ -154,14 +159,15 @@ class DeviceMonitoringService
 
     /**
      * Create and store a monitoring result
-     * @param Device $device The device being monitored
-     * @param bool $success Whether the monitoring was successful
-     * @param string|null $errorMessage Optional error message
-     * @param string $testType The type of test performed
-     * @param bool|null $chirpstackStatus ChirpStack status
-     * @param bool|null $thingsboardStatus ThingsBoard status
-     * @param int|null $chirpstackResponseTime ChirpStack response time in ms
-     * @param int|null $thingsboardResponseTime ThingsBoard response time in ms
+     *
+     * @param  Device  $device  The device being monitored
+     * @param  bool  $success  Whether the monitoring was successful
+     * @param  string|null  $errorMessage  Optional error message
+     * @param  string  $testType  The type of test performed
+     * @param  bool|null  $chirpstackStatus  ChirpStack status
+     * @param  bool|null  $thingsboardStatus  ThingsBoard status
+     * @param  int|null  $chirpstackResponseTime  ChirpStack response time in ms
+     * @param  int|null  $thingsboardResponseTime  ThingsBoard response time in ms
      * @return DeviceMonitoringResult The created monitoring result
      */
     protected function createResult(

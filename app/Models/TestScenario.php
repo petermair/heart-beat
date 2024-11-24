@@ -4,13 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property string|null $description
@@ -65,6 +63,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read int|null $service_alerts_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestScenarioServiceStatus> $serviceStatuses
  * @property-read int|null $service_statuses_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario query()
@@ -109,6 +108,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario whereThingsboardSuccessRate24h($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario whereTimeoutSeconds($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TestScenario extends Model
@@ -219,7 +219,13 @@ class TestScenario extends Model
     {
         static::created(function ($scenario) {
             // Create initial service statuses for all services
-            foreach ((new TestResult())->getServiceTypeList() as $serviceType => $label) {
+            foreach ([
+                TestScenarioServiceStatus::SERVICE_THINGSBOARD,
+                TestScenarioServiceStatus::SERVICE_CHIRPSTACK,
+                TestScenarioServiceStatus::SERVICE_MQTT,
+                TestScenarioServiceStatus::SERVICE_LORATX,
+                TestScenarioServiceStatus::SERVICE_LORARX,
+            ] as $serviceType) {
                 $scenario->serviceStatuses()->create([
                     'service_type' => $serviceType,
                     'status' => TestScenarioServiceStatus::STATUS_HEALTHY,

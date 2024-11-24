@@ -30,7 +30,7 @@ class MessageRouteDto
             'message_payload_id' => $this->message_payload_id,
             'source' => $this->source,
             'destination' => $this->destination,
-            'status' => $this->status
+            'status' => $this->status,
         ];
     }
 }

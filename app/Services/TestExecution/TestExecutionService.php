@@ -5,11 +5,10 @@ namespace App\Services\TestExecution;
 use App\Models\TestResult;
 use App\Models\TestScenario;
 use App\Services\ChirpStack\ChirpStackService;
-use App\Services\ThingsBoard\ThingsBoardService;
 use App\Services\Mqtt\MqttMonitor;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use App\Services\ThingsBoard\ThingsBoardService;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class TestExecutionService
 {
@@ -22,7 +21,7 @@ class TestExecutionService
     public function executeScenario(TestScenario $scenario): void
     {
         // Skip if scenario is not active
-        if (!$scenario->is_active) {
+        if (! $scenario->is_active) {
             return;
         }
 
@@ -59,7 +58,7 @@ class TestExecutionService
                 $scenario->httpDevice,
                 ['command' => 'test_full_route']
             );
-            if (!$tbSuccess) {
+            if (! $tbSuccess) {
                 throw new Exception('Failed to send command from ThingsBoard');
             }
 
@@ -68,7 +67,7 @@ class TestExecutionService
                 $scenario->mqttDevice,
                 timeout: $scenario->timeout_seconds
             );
-            if (!$mqttSuccess) {
+            if (! $mqttSuccess) {
                 throw new Exception('Failed to receive MQTT message');
             }
 
@@ -77,7 +76,7 @@ class TestExecutionService
                 $scenario->mqttDevice,
                 timeout: $scenario->timeout_seconds
             );
-            if (!$csSuccess) {
+            if (! $csSuccess) {
                 throw new Exception('Failed to receive message in ChirpStack');
             }
 
@@ -109,7 +108,7 @@ class TestExecutionService
                 $scenario->mqttDevice,
                 ['data' => 'test_one_way']
             );
-            if (!$csSuccess) {
+            if (! $csSuccess) {
                 throw new Exception('Failed to send uplink from ChirpStack');
             }
 
@@ -118,7 +117,7 @@ class TestExecutionService
                 $scenario->mqttDevice,
                 timeout: $scenario->timeout_seconds
             );
-            if (!$mqttSuccess) {
+            if (! $mqttSuccess) {
                 throw new Exception('Failed to receive MQTT message');
             }
 
@@ -127,7 +126,7 @@ class TestExecutionService
                 $scenario->httpDevice,
                 timeout: $scenario->timeout_seconds
             );
-            if (!$tbSuccess) {
+            if (! $tbSuccess) {
                 throw new Exception('Failed to receive telemetry in ThingsBoard');
             }
 
@@ -173,7 +172,7 @@ class TestExecutionService
         try {
             // Test MQTT connection to ThingsBoard
             $success = $this->thingsBoardService->testMqttConnection($scenario->mqttDevice);
-            if (!$success) {
+            if (! $success) {
                 throw new Exception('Failed to connect to ThingsBoard via MQTT');
             }
 
@@ -200,7 +199,7 @@ class TestExecutionService
         try {
             // Test MQTT connection to ChirpStack
             $success = $this->chirpStackService->testMqttConnection($scenario->mqttDevice);
-            if (!$success) {
+            if (! $success) {
                 throw new Exception('Failed to connect to ChirpStack via MQTT');
             }
 
@@ -227,7 +226,7 @@ class TestExecutionService
         try {
             // Test HTTP connection to ThingsBoard
             $success = $this->thingsBoardService->testHttpConnection($scenario->httpDevice);
-            if (!$success) {
+            if (! $success) {
                 throw new Exception('Failed to connect to ThingsBoard via HTTP');
             }
 
@@ -254,7 +253,7 @@ class TestExecutionService
         try {
             // Test HTTP connection to ChirpStack
             $success = $this->chirpStackService->testHttpConnection($scenario->httpDevice);
-            if (!$success) {
+            if (! $success) {
                 throw new Exception('Failed to connect to ChirpStack via HTTP');
             }
 
@@ -280,7 +279,7 @@ class TestExecutionService
         if (str_contains($errorMessage, 'ChirpStack')) {
             return TestResult::SERVICE_CHIRPSTACK;
         }
-        
+
         return TestResult::SERVICE_UNKNOWN;
     }
 }

@@ -13,7 +13,7 @@ class TestTypeStatsOverview extends BaseWidget
     protected function getStats(): array
     {
         $stats = [];
-        
+
         // Group flow types by their general category
         $typeMapping = [
             'MQTT RX' => [
@@ -47,7 +47,7 @@ class TestTypeStatsOverview extends BaseWidget
             $successRate = $total > 0 ? (($results->successes ?? 0) * 100.0 / $total) : 0;
             $avgResponse = $results->avg_response ?? 0;
 
-            $stats[] = Stat::make($displayName, number_format($successRate, 1) . '%')
+            $stats[] = Stat::make($displayName, number_format($successRate, 1).'%')
                 ->description(sprintf(
                     '%d tests, avg %dms',
                     $total,

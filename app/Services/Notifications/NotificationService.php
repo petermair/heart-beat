@@ -5,15 +5,15 @@ namespace App\Services\Notifications;
 use App\Models\DeviceMonitoringResult;
 use App\Models\NotificationType;
 use App\Models\TestScenarioNotification;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use Carbon\Carbon;
 
 class NotificationService
 {
     public function sendNotification(TestScenarioNotification $notification, DeviceMonitoringResult $result): void
     {
-        if (!$this->shouldSendNotification($notification, $result)) {
+        if (! $this->shouldSendNotification($notification, $result)) {
             return;
         }
 
@@ -37,7 +37,7 @@ class NotificationService
 
     private function shouldSendNotification(TestScenarioNotification $notification, DeviceMonitoringResult $result): bool
     {
-        if (!$notification->notificationType->is_active) {
+        if (! $notification->notificationType->is_active) {
             return false;
         }
 
@@ -57,7 +57,7 @@ class NotificationService
     {
         $config = $type->configuration;
         $recipients = $config['recipients'] ?? [];
-        
+
         if (empty($recipients)) {
             return;
         }
@@ -68,12 +68,12 @@ class NotificationService
         $body .= "Details:\n";
         $body .= "- Success Rate (1h): {$testScenario->success_rate_1h}%\n";
         $body .= "- Success Rate (24h): {$testScenario->success_rate_24h}%\n";
-        $body .= "- Last Success: " . ($testScenario->last_success_at ? $testScenario->last_success_at->diffForHumans() : 'Never') . "\n";
+        $body .= '- Last Success: '.($testScenario->last_success_at ? $testScenario->last_success_at->diffForHumans() : 'Never')."\n";
         $body .= "- Error: {$result->error_message}\n";
 
         Mail::raw($body, function ($message) use ($recipients, $subject) {
             $message->to($recipients)
-                   ->subject($subject);
+                ->subject($subject);
         });
     }
 
@@ -81,17 +81,17 @@ class NotificationService
     {
         $config = $type->configuration;
         $webhookUrl = $config['webhook_url'] ?? null;
-        
-        if (!$webhookUrl) {
+
+        if (! $webhookUrl) {
             return;
         }
 
         $testScenario = $result->testScenario;
         $message = [
-            'text' => "Test Scenario Alert: {$testScenario->name}\n" .
-                     "Success Rate (1h): {$testScenario->success_rate_1h}%\n" .
-                     "Success Rate (24h): {$testScenario->success_rate_24h}%\n" .
-                     "Error: {$result->error_message}"
+            'text' => "Test Scenario Alert: {$testScenario->name}\n".
+                     "Success Rate (1h): {$testScenario->success_rate_1h}%\n".
+                     "Success Rate (24h): {$testScenario->success_rate_24h}%\n".
+                     "Error: {$result->error_message}",
         ];
 
         Http::post($webhookUrl, $message);
@@ -103,8 +103,8 @@ class NotificationService
         $webhookUrl = $config['url'] ?? null;
         $method = strtoupper($config['method'] ?? 'POST');
         $headers = $config['headers'] ?? [];
-        
-        if (!$webhookUrl) {
+
+        if (! $webhookUrl) {
             return;
         }
 
@@ -121,7 +121,7 @@ class NotificationService
                 'id' => $result->id,
                 'error_message' => $result->error_message,
                 'created_at' => $result->created_at,
-            ]
+            ],
         ];
 
         Http::withHeaders($headers)->send($method, $webhookUrl, ['json' => $payload]);
@@ -131,7 +131,7 @@ class NotificationService
     {
         $notification->update([
             'last_notification_at' => now(),
-            'last_result_id' => $result->id
+            'last_result_id' => $result->id,
         ]);
     }
 }

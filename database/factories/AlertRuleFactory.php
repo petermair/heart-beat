@@ -41,7 +41,7 @@ class AlertRuleFactory extends Factory
     /**
      * Configure the model factory to create a server alert rule.
      */
-    public function forServer(Server $server = null): static
+    public function forServer(?Server $server = null): static
     {
         return $this->state(fn (array $attributes) => [
             'server_id' => $server ?? Server::factory(),
@@ -58,7 +58,7 @@ class AlertRuleFactory extends Factory
     /**
      * Configure the model factory to create an MQTT broker alert rule.
      */
-    public function forMqttBroker(MqttBroker $broker = null): static
+    public function forMqttBroker(?MqttBroker $broker = null): static
     {
         return $this->state(fn (array $attributes) => [
             'mqtt_broker_id' => $broker ?? MqttBroker::factory(),

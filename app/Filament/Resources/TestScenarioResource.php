@@ -3,22 +3,22 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TestScenarioResource\Pages;
+use App\Jobs\ExecuteTestScenarioJob;
 use App\Models\TestScenario;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Notifications\Notification;
-use App\Jobs\ExecuteTestScenarioJob;
 
 class TestScenarioResource extends Resource
 {
     protected static ?string $model = TestScenario::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-beaker';
-    
+
     protected static ?string $navigationGroup = 'Monitoring';
 
     protected static ?int $navigationSort = 3;
@@ -194,7 +194,7 @@ class TestScenarioResource extends Resource
                     ->requiresConfirmation()
                     ->action(function (TestScenario $record) {
                         ExecuteTestScenarioJob::dispatch($record);
-                        
+
                         Notification::make()
                             ->title('Test Execution Started')
                             ->success()

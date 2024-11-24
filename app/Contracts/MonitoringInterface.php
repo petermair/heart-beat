@@ -20,8 +20,6 @@ interface MonitoringInterface
 
     /**
      * Check if the service is available.
-     *
-     * @return bool
      */
     public function isAvailable(): bool;
 
@@ -35,7 +33,7 @@ interface MonitoringInterface
     /**
      * Get error rate over the specified time window.
      *
-     * @param int $window Time window in seconds
+     * @param  int  $window  Time window in seconds
      * @return float Error rate as a percentage
      */
     public function getErrorRate(int $window): float;

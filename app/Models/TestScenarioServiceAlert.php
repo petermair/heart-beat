@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * 
- *
  * @property int $id
  * @property int $test_scenario_id
  * @property string $service_type
@@ -22,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\User|null $acknowledgedBy
  * @property-read \App\Models\TestScenario $testScenario
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceAlert newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceAlert newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceAlert query()
@@ -37,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceAlert whereTestScenarioId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceAlert whereTriggeredAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceAlert whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TestScenarioServiceAlert extends Model
@@ -61,17 +61,23 @@ class TestScenarioServiceAlert extends Model
 
     // Alert type constants
     public const ALERT_CRITICAL = 'CRITICAL';
+
     public const ALERT_WARNING = 'WARNING';
 
     // Status constants
     public const STATUS_ACTIVE = 'ACTIVE';
+
     public const STATUS_RESOLVED = 'RESOLVED';
 
     // Service type constants (using TestResult constants)
     public const SERVICE_THINGSBOARD = TestResult::SERVICE_THINGSBOARD;
+
     public const SERVICE_CHIRPSTACK = TestResult::SERVICE_CHIRPSTACK;
+
     public const SERVICE_MQTT = TestResult::SERVICE_MQTT;
+
     public const SERVICE_LORATX = TestResult::SERVICE_LORATX;
+
     public const SERVICE_LORARX = TestResult::SERVICE_LORARX;
 
     // Relationships
@@ -129,12 +135,12 @@ class TestScenarioServiceAlert extends Model
 
     public function getServiceTypeList(): array
     {
-        return (new TestResult())->getServiceTypeList();
+        return (new TestResult)->getServiceTypeList();
     }
 
     public function acknowledge(User $user): void
     {
-        if (!$this->isAcknowledged()) {
+        if (! $this->isAcknowledged()) {
             $this->update([
                 'acknowledged_at' => now(),
                 'acknowledged_by' => $user->id,

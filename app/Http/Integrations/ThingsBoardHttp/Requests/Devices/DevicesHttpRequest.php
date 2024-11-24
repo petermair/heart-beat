@@ -6,7 +6,6 @@ use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\PaginationPlugin\Contracts\HasPagination;
-use Saloon\PaginationPlugin\AbstractPaginator;
 use Saloon\PaginationPlugin\PagedPaginator;
 
 class DevicesHttpRequest extends Request implements HasPagination
@@ -40,6 +39,7 @@ class DevicesHttpRequest extends Request implements HasPagination
     public function hasNextPage(Response $response): ?bool
     {
         $data = $response->json();
+
         return isset($data['hasNext']) ? $data['hasNext'] : false;
     }
 
@@ -58,13 +58,14 @@ class DevicesHttpRequest extends Request implements HasPagination
             protected function isLastPage(Response $response): bool
             {
                 $data = $response->json();
-                return !($data['hasNext'] ?? false);
+
+                return ! ($data['hasNext'] ?? false);
             }
-            
+
             protected function getPageItems(Response $response, Request $request): array
             {
                 return $response->json('data');
             }
         };
-    }    
+    }
 }

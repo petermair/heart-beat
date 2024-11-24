@@ -1,12 +1,12 @@
 <?php
 
+use App\Models\Device;
 use App\Services\Mqtt\ChirpStackMqttClient;
-use App\Models\MonitoringDevice;
 use PhpMqtt\Client\MqttClient as PhpMqttClient;
-use Mockery;
 
-beforeEach(function() {
-    $this->device = mock(MonitoringDevice::class);
+
+beforeEach(function () {
+    $this->device = Mockery::mock(Device::class);
     $this->device->shouldReceive('getAttribute')
         ->with('id')
         ->andReturn(1);
@@ -15,20 +15,20 @@ beforeEach(function() {
         ->andReturn([
             'host' => 'localhost',
             'port' => 1883,
-            'application_id' => 'app123'
+            'application_id' => 'app123',
         ]);
     $this->device->shouldReceive('getAttribute')
         ->with('credentials')
         ->andReturn([
             'chirpstack_api_key' => 'test-key',
-            'chirpstack_device_eui' => 'a1b2c3d4e5f6'
+            'chirpstack_device_eui' => 'a1b2c3d4e5f6',
         ]);
 
-    $this->phpMqttClient = mock(PhpMqttClient::class);
+    $this->phpMqttClient = Mockery::mock(PhpMqttClient::class);
     $this->client = new ChirpStackMqttClient($this->device, $this->phpMqttClient);
 });
 
-test('can connect to broker', function() {
+test('can connect to broker', function () {
     $this->phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(false);
@@ -40,7 +40,7 @@ test('can connect to broker', function() {
     $this->client->connect();
 });
 
-test('can subscribe to uplink messages', function() {
+test('can subscribe to uplink messages', function () {
     $deviceEui = 'a1b2c3d4e5f6';
     $applicationId = 'app123';
     $topic = "application/{$applicationId}/device/{$deviceEui}/event/up";
@@ -58,21 +58,21 @@ test('can subscribe to uplink messages', function() {
         )
         ->andReturn(true);
 
-    $this->client->subscribe($topic, function($message) {
+    $this->client->subscribe($topic, function ($message) {
         // Callback function
     });
 });
 
-test('can handle uplink message', function() {
+test('can handle uplink message', function () {
     $deviceEui = 'a1b2c3d4e5f6';
     $applicationId = 'app123';
     $topic = "application/{$applicationId}/device/{$deviceEui}/event/up";
-    
+
     $message = [
         'applicationID' => $applicationId,
         'deviceName' => 'test-device',
         'devEUI' => $deviceEui,
-        'data' => base64_encode('test data')
+        'data' => base64_encode('test data'),
     ];
 
     $this->phpMqttClient->shouldReceive('isConnected')
@@ -84,22 +84,23 @@ test('can handle uplink message', function() {
         ->once()
         ->with(
             $topic,
-            Mockery::on(function($cb) use (&$receivedMessage, $message, $topic) {
+            Mockery::on(function ($cb) use (&$receivedMessage, $message, $topic) {
                 $cb($topic, json_encode($message));
+
                 return true;
             }),
             1
         )
         ->andReturn(true);
 
-    $this->client->subscribe($topic, function($topic, $msg) use (&$receivedMessage) {
+    $this->client->subscribe($topic, function ($topic, $msg) use (&$receivedMessage) {
         $receivedMessage = json_decode($msg, true);
     });
 
     expect($receivedMessage)->toBe($message);
 });
 
-test('can disconnect from broker', function() {
+test('can disconnect from broker', function () {
     $this->phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(true);
@@ -111,6 +112,6 @@ test('can disconnect from broker', function() {
     $this->client->disconnect();
 });
 
-afterEach(function() {
+afterEach(function () {
     Mockery::close();
 });

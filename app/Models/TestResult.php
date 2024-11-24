@@ -4,13 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOneThrough;
-use App\Models\TestScenario;
-use App\Models\Device;
 
 /**
- * 
- *
  * @property int $id
  * @property int $test_scenario_id
  * @property int $device_id
@@ -27,6 +22,7 @@ use App\Models\Device;
  * @property-read float $success_rate
  * @property-read Device|null $httpDevice
  * @property-read TestScenario $testScenario
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult query()
@@ -42,32 +38,47 @@ use App\Models\Device;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereTestScenarioId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TestResult extends Model
 {
     // Statuses
     public const STATUS_SUCCESS = 'SUCCESS';
+
     public const STATUS_FAILURE = 'FAILURE';
 
     // Flow Types
     public const FLOW_FULL_ROUTE_1 = 'FULL_ROUTE_1';
+
     public const FLOW_ONE_WAY_ROUTE = 'ONE_WAY_ROUTE';
+
     public const FLOW_TWO_WAY_ROUTE = 'TWO_WAY_ROUTE';
+
     public const FLOW_DIRECT_TEST_1 = 'DIRECT_TEST_1';
+
     public const FLOW_DIRECT_TEST_2 = 'DIRECT_TEST_2';
+
     public const FLOW_TB_MQTT_HEALTH = 'TB_MQTT_HEALTH';
+
     public const FLOW_CS_MQTT_HEALTH = 'CS_MQTT_HEALTH';
+
     public const FLOW_TB_HTTP_HEALTH = 'TB_HTTP_HEALTH';
+
     public const FLOW_CS_HTTP_HEALTH = 'CS_HTTP_HEALTH';
 
     // Service Types
-    public const SERVICE_THINGSBOARD = 'ThingsBoard';
-    public const SERVICE_CHIRPSTACK = 'ChirpStack';
+    public const SERVICE_THINGSBOARD = 'THINGSBOARD';
+
+    public const SERVICE_CHIRPSTACK = 'CHIRPSTACK';
+
     public const SERVICE_MQTT = 'MQTT';
-    public const SERVICE_LORATX = 'LoRa TX';
-    public const SERVICE_LORARX = 'LoRa RX';
-    public const SERVICE_UNKNOWN = 'Unknown';
+
+    public const SERVICE_LORATX = 'LORATX';
+
+    public const SERVICE_LORARX = 'LORARX';
+
+    public const SERVICE_UNKNOWN = 'UNKNOWN';
 
     protected $fillable = [
         'test_scenario_id',

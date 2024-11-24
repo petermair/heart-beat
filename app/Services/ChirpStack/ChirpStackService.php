@@ -14,9 +14,10 @@ class ChirpStackService
 
     /**
      * Get device information from ChirpStack
-     * @param string $server The ChirpStack server URL
-     * @param string $applicationId The application ID
-     * @param string $deviceEui The device EUI
+     *
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
      * @return array<string, mixed> Device information
      */
     public function getDeviceInfo(string $server, string $applicationId, string $deviceEui): array
@@ -28,9 +29,10 @@ class ChirpStackService
 
     /**
      * Get device status from ChirpStack
-     * @param string $server The ChirpStack server URL
-     * @param string $applicationId The application ID
-     * @param string $deviceEui The device EUI
+     *
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
      * @return bool True if device is active, false otherwise
      */
     public function getDeviceStatus(string $server, string $applicationId, string $deviceEui): bool
@@ -39,7 +41,7 @@ class ChirpStackService
             $response = $this->client->setBaseUrl($server)
                 ->deviceStatus($applicationId, $deviceEui)
                 ->json();
-            
+
             return isset($response['lastSeenAt']) && strtotime($response['lastSeenAt']) > strtotime('-5 minutes');
         } catch (Exception $e) {
             return false;
@@ -48,9 +50,10 @@ class ChirpStackService
 
     /**
      * Get device status from ChirpStack via HTTP
-     * @param string $server The ChirpStack server URL
-     * @param string $applicationId The application ID
-     * @param string $deviceEui The device EUI
+     *
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
      * @return bool True if device is active, false otherwise
      */
     public function getDeviceStatusHttp(string $server, string $applicationId, string $deviceEui): bool
@@ -59,7 +62,7 @@ class ChirpStackService
             $response = $this->client->setBaseUrl($server)
                 ->deviceStatus($applicationId, $deviceEui)
                 ->json();
-            
+
             return isset($response['lastSeenAt']) && strtotime($response['lastSeenAt']) > strtotime('-5 minutes');
         } catch (Exception $e) {
             return false;
@@ -68,11 +71,12 @@ class ChirpStackService
 
     /**
      * Check device RX messages
-     * @param string $server The ChirpStack server URL
-     * @param string $applicationId The application ID
-     * @param string $deviceEui The device EUI
-     * @param int $expectedCount Expected number of messages
-     * @param int $timeout Timeout in seconds
+     *
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
+     * @param  int  $expectedCount  Expected number of messages
+     * @param  int  $timeout  Timeout in seconds
      * @return array Check result
      */
     public function checkDeviceRxMessages(
@@ -88,17 +92,17 @@ class ChirpStackService
                 ->json();
 
             $messages = $response['result'] ?? [];
-            $recentMessages = array_filter($messages, function($msg) use ($timeout) {
-                return isset($msg['receivedAt']) && 
+            $recentMessages = array_filter($messages, function ($msg) use ($timeout) {
+                return isset($msg['receivedAt']) &&
                     strtotime($msg['receivedAt']) > strtotime("-{$timeout} seconds");
             });
 
             $messagesReceived = count($recentMessages);
-            
+
             return [
                 'success' => $messagesReceived >= $expectedCount,
                 'messages_received' => $messagesReceived,
-                'error_message' => $messagesReceived < $expectedCount 
+                'error_message' => $messagesReceived < $expectedCount
                     ? "Expected {$expectedCount} messages but received {$messagesReceived}"
                     : null,
             ];
@@ -113,11 +117,12 @@ class ChirpStackService
 
     /**
      * Check device TX messages
-     * @param string $server The ChirpStack server URL
-     * @param string $applicationId The application ID
-     * @param string $deviceEui The device EUI
-     * @param string $payload Message payload
-     * @param bool $expectAck Whether to expect acknowledgment
+     *
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
+     * @param  string  $payload  Message payload
+     * @param  bool  $expectAck  Whether to expect acknowledgment
      * @return array Check result
      */
     public function checkDeviceTxMessages(
@@ -136,11 +141,11 @@ class ChirpStackService
                 ->json();
 
             $ackReceived = $response['status'] ?? false;
-            
+
             return [
-                'success' => !$expectAck || $ackReceived,
+                'success' => ! $expectAck || $ackReceived,
                 'ack_received' => $ackReceived,
-                'error_message' => $expectAck && !$ackReceived
+                'error_message' => $expectAck && ! $ackReceived
                     ? 'Message sent but no acknowledgment received'
                     : null,
             ];
@@ -155,8 +160,9 @@ class ChirpStackService
 
     /**
      * Wait for a device message
-     * @param Device $device Device to wait for
-     * @param int $timeout Timeout in seconds
+     *
+     * @param  Device  $device  Device to wait for
+     * @param  int  $timeout  Timeout in seconds
      * @return bool Success status
      */
     public function waitForDeviceMessage(Device $device, int $timeout = 30): bool
@@ -165,11 +171,12 @@ class ChirpStackService
             $startTime = time();
             while (time() - $startTime < $timeout) {
                 $response = $this->client->getDeviceMessages($device->id);
-                if ($response->ok() && !empty($response->json())) {
+                if ($response->ok() && ! empty($response->json())) {
                     return true;
                 }
                 sleep(1);
             }
+
             return false;
         } catch (Exception $e) {
             return false;
@@ -178,14 +185,16 @@ class ChirpStackService
 
     /**
      * Simulate a device uplink
-     * @param Device $device Device to simulate
-     * @param array<string, mixed> $data Uplink data
+     *
+     * @param  Device  $device  Device to simulate
+     * @param  array<string, mixed>  $data  Uplink data
      * @return bool Success status
      */
     public function simulateDeviceUplink(Device $device, array $data): bool
     {
         try {
             $response = $this->client->simulateUplink($device->id, $data);
+
             return $response->ok();
         } catch (Exception $e) {
             return false;
@@ -194,13 +203,15 @@ class ChirpStackService
 
     /**
      * Test MQTT connection
-     * @param Device $device Device to test
+     *
+     * @param  Device  $device  Device to test
      * @return bool Success status
      */
     public function testMqttConnection(Device $device): bool
     {
         try {
             $response = $this->client->testMqttConnection($device->id);
+
             return $response->ok();
         } catch (Exception $e) {
             return false;
@@ -209,13 +220,15 @@ class ChirpStackService
 
     /**
      * Test HTTP connection
-     * @param Device $device Device to test
+     *
+     * @param  Device  $device  Device to test
      * @return bool Success status
      */
     public function testHttpConnection(Device $device): bool
     {
         try {
             $response = $this->client->testHttpConnection($device->id);
+
             return $response->ok();
         } catch (Exception $e) {
             return false;

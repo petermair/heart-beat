@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * 
- *
  * @property int $id
  * @property int $test_scenario_id
  * @property string $service_type
@@ -22,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\TestScenario $testScenario
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceStatus newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceStatus newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceStatus query()
@@ -37,12 +36,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceStatus whereTestScenarioId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceStatus whereTotalCount1h($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioServiceStatus whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TestScenarioServiceStatus extends Model
 {
+    // Service Types
+    public const SERVICE_THINGSBOARD = 'THINGSBOARD';
+    public const SERVICE_CHIRPSTACK = 'CHIRPSTACK';
+    public const SERVICE_MQTT = 'MQTT';
+    public const SERVICE_LORATX = 'LORATX';
+    public const SERVICE_LORARX = 'LORARX';
+
     public const STATUS_HEALTHY = 'HEALTHY';
+
     public const STATUS_WARNING = 'WARNING';
+
     public const STATUS_CRITICAL = 'CRITICAL';
 
     protected $fillable = [
@@ -101,6 +110,7 @@ class TestScenarioServiceStatus extends Model
         if ($this->last_check_at === null || $this->last_check_at->lt($oneHourAgo)) {
             $this->success_count_1h = $success ? 1 : 0;
             $this->total_count_1h = 1;
+
             return;
         }
 

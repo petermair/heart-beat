@@ -17,7 +17,7 @@ class MqttBrokerFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company() . ' MQTT Broker',
+            'name' => fake()->company().' MQTT Broker',
             'host' => fake()->domainName(),
             'port' => fake()->numberBetween(1883, 8883),
             'username' => fake()->userName(),

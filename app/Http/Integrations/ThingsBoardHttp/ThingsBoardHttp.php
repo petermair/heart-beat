@@ -2,15 +2,15 @@
 
 namespace App\Http\Integrations\ThingsBoardHttp;
 
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\CreateDeviceRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceStatusRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceTelemetryRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\ListDevicesRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Rpc\DeviceRpcRequest;
+use Saloon\Contracts\Authenticator;
+use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AcceptsJson;
-use Saloon\Http\Auth\TokenAuthenticator;
-use Saloon\Contracts\Authenticator;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceTelemetryRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Rpc\DeviceRpcRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceStatusRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\ListDevicesRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\CreateDeviceRequest;
 
 class ThingsBoardHttp extends Connector
 {
@@ -29,6 +29,7 @@ class ThingsBoardHttp extends Connector
     public function setBaseUrl(string $baseUrl): static
     {
         $this->baseUrl = $baseUrl;
+
         return $this;
     }
 
@@ -43,12 +44,14 @@ class ThingsBoardHttp extends Connector
         if ($authenticator instanceof TokenAuthenticator) {
             $this->token = $authenticator->token;
         }
+
         return $this;
     }
 
     public function withToken(string $token): static
     {
         $this->token = $token;
+
         return $this->authenticate(new TokenAuthenticator($token));
     }
 
@@ -70,7 +73,8 @@ class ThingsBoardHttp extends Connector
 
     /**
      * Get device telemetry data
-     * @param string $deviceEui Device EUI
+     *
+     * @param  string  $deviceEui  Device EUI
      * @return \Saloon\Http\Response Response
      */
     public function deviceTelemetry(string $deviceEui)
@@ -80,8 +84,9 @@ class ThingsBoardHttp extends Connector
 
     /**
      * Execute RPC call on device
-     * @param string $deviceEui Device EUI
-     * @param array $data RPC data
+     *
+     * @param  string  $deviceEui  Device EUI
+     * @param  array  $data  RPC data
      * @return \Saloon\Http\Response Response
      */
     public function deviceRpc(string $deviceEui, array $data)
@@ -91,7 +96,8 @@ class ThingsBoardHttp extends Connector
 
     /**
      * Get device status
-     * @param string $deviceEui Device EUI
+     *
+     * @param  string  $deviceEui  Device EUI
      * @return \Saloon\Http\Response Response
      */
     public function deviceStatus(string $deviceEui)
@@ -101,16 +107,18 @@ class ThingsBoardHttp extends Connector
 
     /**
      * Get devices
+     *
      * @return \Saloon\Http\Response Response
      */
     public function devices()
     {
-        return $this->send(new ListDevicesRequest());
+        return $this->send(new ListDevicesRequest);
     }
 
     /**
      * Create device
-     * @param array $data Device data
+     *
+     * @param  array  $data  Device data
      * @return \Saloon\Http\Response Response
      */
     public function createDevice(array $data)

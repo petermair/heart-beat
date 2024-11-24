@@ -2,32 +2,27 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Device;
-use App\Models\TestScenario;
 use App\Models\TestResult;
 use Filament\Pages\Page;
-use Filament\Support\Enums\IconPosition;
-use Filament\Forms\Components\Grid;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Carbon\Carbon;
-use App\Filament\Widgets\SystemStatsOverview;
-use App\Filament\Widgets\TestTypeStatsOverview;
-use App\Filament\Widgets\DeviceStatsOverview;
-use App\Filament\Widgets\FlowStatsOverview;
-use App\Filament\Widgets\ResponseTimeChart;
+use Filament\Tables\Table;
 
 class MonitoringDashboard extends Page implements HasTable
 {
     use InteractsWithTable;
-    
+
     protected static string $view = 'filament.pages.monitoring-dashboard';
+
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
+
     protected static ?string $navigationLabel = 'Monitoring Dashboard';
+
     protected static ?string $title = 'Monitoring Dashboard';
+
     protected static ?int $navigationSort = 1;
+
     protected ?string $heading = 'System Monitoring Dashboard';
 
     protected function getWidgets(): array

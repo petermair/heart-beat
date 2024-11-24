@@ -2,18 +2,21 @@
 
 namespace App\Services\Mqtt;
 
-use App\Models\Device;
+use App\DataTransferObjects\ChirpStackMessageDto;
 use App\DataTransferObjects\MessagePayloadDto;
 use App\DataTransferObjects\MessageRouteDto;
-use App\DataTransferObjects\ChirpStackMessageDto;
 use App\DataTransferObjects\ThingsBoardMessageDto;
+use App\Models\Device;
 use RuntimeException;
 
 class MqttMonitor
 {
     private Device $device;
+
     private ThingsBoardMqttClient $thingsboardClient;
+
     private ChirpStackMqttClient $chirpstackClient;
+
     private bool $stopped = false;
 
     public function __construct(
@@ -68,8 +71,9 @@ class MqttMonitor
 
     /**
      * Wait for a message from either ThingsBoard or ChirpStack
-     * @param Device $device Device to wait for
-     * @param int $timeout Timeout in seconds
+     *
+     * @param  Device  $device  Device to wait for
+     * @param  int  $timeout  Timeout in seconds
      * @return bool Success status
      */
     public function waitForMessage(Device $device, int $timeout = 30): bool
@@ -82,6 +86,7 @@ class MqttMonitor
                 }
                 sleep(1);
             }
+
             return false;
         } catch (RuntimeException $e) {
             return false;
@@ -98,7 +103,7 @@ class MqttMonitor
                 'data' => $message->data,
                 'deviceEui' => $message->deviceEui,
                 'rssi' => $message->rssi ?? 0.0,
-                'snr' => $message->snr ?? 0.0
+                'snr' => $message->snr ?? 0.0,
             ]);
 
             // Record ChirpStack reception
@@ -106,7 +111,7 @@ class MqttMonitor
                 'id' => time(),
                 'message_payload_id' => $messagePayload->id,
                 'source' => $this->device['chirpstack_server']->name ?? 'chirpstack',
-                'destination' => 'thingsboard'
+                'destination' => 'thingsboard',
             ]);
 
             // Forward to ThingsBoard
@@ -116,8 +121,8 @@ class MqttMonitor
                     'metadata' => [
                         'deviceEUI' => $message->deviceEui,
                         'rssi' => $message->rssi,
-                        'snr' => $message->snr
-                    ]
+                        'snr' => $message->snr,
+                    ],
                 ]);
 
                 // Record successful forwarding
@@ -126,11 +131,11 @@ class MqttMonitor
                     'message_payload_id' => $messagePayload->id,
                     'source' => 'thingsboard',
                     'destination' => 'client',
-                    'status' => 'success'
+                    'status' => 'success',
                 ]);
             } catch (\Exception $e) {
                 // Log error and continue
-                error_log("Failed to forward message to ThingsBoard: " . $e->getMessage());
+                error_log('Failed to forward message to ThingsBoard: '.$e->getMessage());
             }
         });
     }
@@ -145,7 +150,7 @@ class MqttMonitor
                 'data' => $request->params ?? [],
                 'deviceEui' => $this->device->credentials['thingsboard_device_eui'] ?? '',
                 'rssi' => 0.0,
-                'snr' => 0.0
+                'snr' => 0.0,
             ]);
 
             // Record ThingsBoard reception
@@ -153,7 +158,7 @@ class MqttMonitor
                 'id' => 1,
                 'message_payload_id' => $messagePayload->id,
                 'source' => $this->device->thingsboard_server->name ?? 'thingsboard',
-                'destination' => 'chirpstack'
+                'destination' => 'chirpstack',
             ]);
 
             try {
@@ -170,19 +175,19 @@ class MqttMonitor
                     'id' => 2,
                     'message_payload_id' => $messagePayload->id,
                     'source' => 'chirpstack',
-                    'destination' => 'device'
+                    'destination' => 'device',
                 ]);
 
                 // Acknowledge successful processing
                 $this->thingsboardClient->sendRpcResponse($requestId, ['success' => true]);
             } catch (\Exception $e) {
                 // Log error and continue
-                error_log("Failed to forward message to ChirpStack: " . $e->getMessage());
+                error_log('Failed to forward message to ChirpStack: '.$e->getMessage());
 
                 // Acknowledge failure
                 $this->thingsboardClient->sendRpcResponse($requestId, [
                     'success' => false,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
             }
         });
@@ -195,7 +200,7 @@ class MqttMonitor
             $this->thingsboardClient->sendTelemetry([
                 'status' => 'online',
                 'lastJoinTime' => time(),
-                'devAddr' => $event['devAddr'] ?? null
+                'devAddr' => $event['devAddr'] ?? null,
             ]);
         });
     }

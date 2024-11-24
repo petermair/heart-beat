@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\NotificationType;
+use Illuminate\Database\Seeder;
 
 class NotificationTypesSeeder extends Seeder
 {
@@ -21,19 +21,19 @@ class NotificationTypesSeeder extends Seeder
                             'type' => 'array',
                             'items' => [
                                 'type' => 'string',
-                                'format' => 'email'
+                                'format' => 'email',
                             ],
-                            'minItems' => 1
+                            'minItems' => 1,
                         ],
                         'min_interval' => [
                             'type' => 'integer',
                             'minimum' => 60,
-                            'default' => 300
-                        ]
+                            'default' => 300,
+                        ],
                     ],
-                    'required' => ['recipients']
+                    'required' => ['recipients'],
                 ],
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'name' => 'slack',
@@ -44,17 +44,17 @@ class NotificationTypesSeeder extends Seeder
                     'properties' => [
                         'webhook_url' => [
                             'type' => 'string',
-                            'format' => 'uri'
+                            'format' => 'uri',
                         ],
                         'min_interval' => [
                             'type' => 'integer',
                             'minimum' => 60,
-                            'default' => 300
-                        ]
+                            'default' => 300,
+                        ],
                     ],
-                    'required' => ['webhook_url']
+                    'required' => ['webhook_url'],
                 ],
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'name' => 'webhook',
@@ -65,29 +65,29 @@ class NotificationTypesSeeder extends Seeder
                     'properties' => [
                         'url' => [
                             'type' => 'string',
-                            'format' => 'uri'
+                            'format' => 'uri',
                         ],
                         'method' => [
                             'type' => 'string',
                             'enum' => ['GET', 'POST', 'PUT', 'PATCH'],
-                            'default' => 'POST'
+                            'default' => 'POST',
                         ],
                         'headers' => [
                             'type' => 'object',
                             'additionalProperties' => [
-                                'type' => 'string'
-                            ]
+                                'type' => 'string',
+                            ],
                         ],
                         'min_interval' => [
                             'type' => 'integer',
                             'minimum' => 60,
-                            'default' => 300
-                        ]
+                            'default' => 300,
+                        ],
                     ],
-                    'required' => ['url']
+                    'required' => ['url'],
                 ],
-                'is_active' => true
-            ]
+                'is_active' => true,
+            ],
         ];
 
         foreach ($types as $type) {

@@ -14,7 +14,7 @@ class DeviceStatsOverview extends BaseWidget
     protected function getStats(): array
     {
         $totalTests = TestResult::where('created_at', '>=', now()->subDay())->count();
-        
+
         // Count devices with MQTT flow failures
         $mqttFlows = [
             'FULL_ROUTE_1',
@@ -23,7 +23,7 @@ class DeviceStatsOverview extends BaseWidget
             'DIRECT_TEST_1',
             'DIRECT_TEST_2',
             'TB_MQTT_HEALTH',
-            'CS_MQTT_HEALTH'
+            'CS_MQTT_HEALTH',
         ];
 
         $failedDevices = Device::whereHas('testResults', function ($query) use ($mqttFlows) {
@@ -38,13 +38,13 @@ class DeviceStatsOverview extends BaseWidget
             ->avg('execution_time_ms');
 
         return [
-            Stat::make('Total Tests (24h)', (string)$totalTests)
+            Stat::make('Total Tests (24h)', (string) $totalTests)
                 ->icon('heroicon-o-clipboard-document-check')
                 ->color('info'),
-            Stat::make('Devices with MQTT Failures', (string)$failedDevices)
+            Stat::make('Devices with MQTT Failures', (string) $failedDevices)
                 ->icon('heroicon-o-exclamation-triangle')
                 ->color($failedDevices === 0 ? 'success' : 'danger'),
-            Stat::make('Avg Response Time', number_format($avgResponseTime ?? 0, 2) . 'ms')
+            Stat::make('Avg Response Time', number_format($avgResponseTime ?? 0, 2).'ms')
                 ->icon('heroicon-o-clock')
                 ->color('info'),
         ];

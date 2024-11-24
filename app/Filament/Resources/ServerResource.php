@@ -2,29 +2,30 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\Server;
-use App\Models\ServerType;
-use Filament\Resources\Resource;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Actions\Action;
-use Illuminate\Database\Eloquent\Builder;
-use App\Http\Integrations\ThingsBoardHttp\ThingsBoardHttp;
-use App\Http\Integrations\ThingsBoardHttp\Requests\LoginHttpRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DevicesHttpRequest;
+use App\Filament\Resources\ServerResource\Pages;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceCreateHttpRequest;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceDeleteHttpRequest;
-use App\Filament\Resources\ServerResource\Pages;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DevicesHttpRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\LoginHttpRequest;
+use App\Http\Integrations\ThingsBoardHttp\ThingsBoardHttp;
+use App\Models\Server;
+use App\Models\ServerType;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
 
 class ServerResource extends Resource
 {
     protected static ?string $model = Server::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-server';
+
     protected static ?string $navigationGroup = 'Monitoring';
+
     protected static ?int $navigationSort = 1;
 
     public static function getNavigationBadge(): ?string
@@ -79,7 +80,7 @@ class ServerResource extends Resource
                     ->schema([
                         Forms\Components\KeyValue::make('credentials')
                             ->keyLabel('Key')
-                            ->valueLabel('Value')                            
+                            ->valueLabel('Value')
                             ->deletable()
                             ->reorderable(false)
                             ->columnSpanFull()
@@ -92,7 +93,7 @@ class ServerResource extends Resource
                         Forms\Components\KeyValue::make('settings')
                             ->keyLabel('Setting')
                             ->valueLabel('Value')
-                            ->addable(fn ($get) => !empty($get('server_type_id')))
+                            ->addable(fn ($get) => ! empty($get('server_type_id')))
                             ->deletable()
                             ->reorderable(false)
                             ->columnSpanFull()
@@ -151,14 +152,14 @@ class ServerResource extends Resource
 
                                     $loginResponse = $client->send(new LoginHttpRequest([
                                         'username' => $record->credentials['username'],
-                                        'password' => $record->credentials['password']
+                                        'password' => $record->credentials['password'],
                                     ]));
-                                    if (!$loginResponse->successful()) {
+                                    if (! $loginResponse->successful()) {
                                         return 'Failed to authenticate with ThingsBoard';
                                     }
 
-                                    $devicesResponse = $client->send(new DevicesHttpRequest());
-                                    if (!$devicesResponse->successful()) {
+                                    $devicesResponse = $client->send(new DevicesHttpRequest);
+                                    if (! $devicesResponse->successful()) {
                                         return 'Failed to fetch devices';
                                     }
 
@@ -168,6 +169,7 @@ class ServerResource extends Resource
                                     }
 
                                     $recordId = $record->id;
+
                                     return view('filament.components.devices-list', compact('devices', 'recordId'))->render();
 
                                 } catch (\Exception $e) {
@@ -197,9 +199,9 @@ class ServerResource extends Resource
                         try {
                             $loginResponse = $client->send(new LoginHttpRequest([
                                 'username' => $record->credentials['username'],
-                                'password' => $record->credentials['password']
+                                'password' => $record->credentials['password'],
                             ]));
-                            if (!$loginResponse->successful()) {
+                            if (! $loginResponse->successful()) {
                                 throw new \Exception('Failed to authenticate with ThingsBoard');
                             }
 
@@ -209,7 +211,7 @@ class ServerResource extends Resource
                                 'label' => $data['label'] ?? null,
                             ]));
 
-                            if (!$createResponse->successful()) {
+                            if (! $createResponse->successful()) {
                                 throw new \Exception('Failed to create device');
                             }
 
@@ -238,9 +240,9 @@ class ServerResource extends Resource
                         try {
                             $loginResponse = $client->send(new LoginHttpRequest([
                                 'username' => $record->credentials['username'],
-                                'password' => $record->credentials['password']
+                                'password' => $record->credentials['password'],
                             ]));
-                            if (!$loginResponse->successful()) {
+                            if (! $loginResponse->successful()) {
                                 throw new \Exception('Failed to authenticate with ThingsBoard');
                             }
 
@@ -248,7 +250,7 @@ class ServerResource extends Resource
                                 deviceId: $data['deviceId']
                             ));
 
-                            if (!$deleteResponse->successful()) {
+                            if (! $deleteResponse->successful()) {
                                 throw new \Exception('Failed to delete device');
                             }
 
@@ -291,55 +293,58 @@ class ServerResource extends Resource
 
     protected static function getCredentialsHelperText($serverTypeId): string
     {
-        if (!$serverTypeId) {
+        if (! $serverTypeId) {
             return 'Select a server type first';
         }
 
         $serverType = ServerType::find($serverTypeId);
-        if (!$serverType) {
+        if (! $serverType) {
             return '';
         }
 
         $required = implode(', ', $serverType->required_credentials ?? []);
+
         return "Required credentials: {$required}";
     }
 
     protected static function getSettingsHelperText($serverTypeId): string
     {
-        if (!$serverTypeId) {
+        if (! $serverTypeId) {
             return 'Select a server type first';
         }
 
         $serverType = ServerType::find($serverTypeId);
-        if (!$serverType) {
+        if (! $serverType) {
             return '';
         }
 
         $required = implode(', ', $serverType->required_settings ?? []);
+
         return "Required settings: {$required}";
     }
 
     protected static function validateCredentials($serverTypeId): callable
     {
         return function ($value) use ($serverTypeId) {
-            if (!$serverTypeId) {
+            if (! $serverTypeId) {
                 return true;
             }
 
             $serverType = ServerType::find($serverTypeId);
-            if (!$serverType || empty($serverType->required_credentials)) {
+            if (! $serverType || empty($serverType->required_credentials)) {
                 return true;
             }
 
-            if (!is_array($value)) {
-                return "Invalid credentials format";
+            if (! is_array($value)) {
+                return 'Invalid credentials format';
             }
 
             $providedKeys = array_keys($value);
             $missingKeys = array_diff($serverType->required_credentials, $providedKeys);
 
-            if (!empty($missingKeys)) {
+            if (! empty($missingKeys)) {
                 $missing = implode(', ', $missingKeys);
+
                 return "Missing required credentials: {$missing}";
             }
 
@@ -350,24 +355,25 @@ class ServerResource extends Resource
     protected static function validateSettings($serverTypeId): callable
     {
         return function ($value) use ($serverTypeId) {
-            if (!$serverTypeId) {
+            if (! $serverTypeId) {
                 return true;
             }
 
             $serverType = ServerType::find($serverTypeId);
-            if (!$serverType || empty($serverType->required_settings)) {
+            if (! $serverType || empty($serverType->required_settings)) {
                 return true;
             }
 
-            if (!is_array($value)) {
-                return "Invalid settings format";
+            if (! is_array($value)) {
+                return 'Invalid settings format';
             }
 
             $providedKeys = array_keys($value);
             $missingKeys = array_diff($serverType->required_settings, $providedKeys);
 
-            if (!empty($missingKeys)) {
+            if (! empty($missingKeys)) {
                 $missing = implode(', ', $missingKeys);
+
                 return "Missing required settings: {$missing}";
             }
 

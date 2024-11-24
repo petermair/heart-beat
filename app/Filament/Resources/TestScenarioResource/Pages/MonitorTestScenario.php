@@ -6,12 +6,12 @@ use App\Filament\Resources\TestScenarioResource;
 use App\Models\TestResult;
 use App\Models\TestScenario;
 use Filament\Resources\Pages\Page;
+use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Tables;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 
 class MonitorTestScenario extends Page implements HasTable
 {
@@ -65,7 +65,7 @@ class MonitorTestScenario extends Page implements HasTable
     public function getHeader(): ?View
     {
         return view('filament.resources.test-scenario-resource.pages.monitor-header', [
-            'scenario' => $this->record
+            'scenario' => $this->record,
         ]);
     }
 

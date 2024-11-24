@@ -16,7 +16,7 @@ return new class extends Migration
                 'CHIRPSTACK',
                 'MQTT',
                 'LORATX',
-                'LORARX'
+                'LORARX',
             ]);
             $table->enum('status', ['HEALTHY', 'WARNING', 'CRITICAL']);
             $table->timestamp('last_success_at')->nullable();

@@ -1,92 +1,149 @@
 <?php
 
-use App\Services\Mqtt\ThingsBoardMqttClient;
-use App\Models\MonitoringDevice;
-use PhpMqtt\Client\MqttClient as PhpMqttClient;
-use PhpMqtt\Client\ConnectionSettings;
-use Mockery;
+namespace Tests\Unit\Services\Mqtt;
 
-beforeEach(function() {
-    $this->device = Mockery::mock(MonitoringDevice::class);
-    $this->device->shouldReceive('getAttribute')
+use App\Models\Device;
+use App\Services\Mqtt\ThingsBoardMessageDto;
+use App\Services\Mqtt\ThingsBoardMqttClient;
+use Mockery;
+use PhpMqtt\Client\MqttClient as PhpMqttClient;
+
+test('can send telemetry data', function () {
+    $device = Mockery::mock(Device::class);
+    $device->shouldReceive('getAttribute')
         ->with('id')
         ->andReturn(1);
-    $this->device->shouldReceive('getAttribute')
+    $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
             'host' => 'localhost',
-            'port' => 1883
+            'port' => 1883,
         ]);
-    $this->device->shouldReceive('getAttribute')
+    $device->shouldReceive('getAttribute')
         ->with('credentials')
         ->andReturn([
-            'thingsboard_access_token' => 'test-token'
+            'thingsboard_access_token' => 'test-token',
         ]);
 
-    $this->phpMqttClient = Mockery::mock(PhpMqttClient::class);
-    $this->phpMqttClient->shouldReceive('connect')
+    $phpMqttClient = Mockery::mock(PhpMqttClient::class);
+    $phpMqttClient->shouldReceive('connect')
         ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('disconnect')
+    $phpMqttClient->shouldReceive('disconnect')
         ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('publish')
-        ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('subscribe')
-        ->withArgs(function($topic, $callback, $qos = 1) {
-            return $topic === 'v1/devices/me/rpc/request/+' && is_callable($callback) && $qos === 1;
-        })
-        ->andReturn(true);
-
-    $this->client = new ThingsBoardMqttClient($this->device, $this->phpMqttClient);
-});
-
-test('can send telemetry data', function() {
-    $this->phpMqttClient->shouldReceive('isConnected')
+    $phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('publish')
+    $phpMqttClient->shouldReceive('publish')
         ->once()
         ->with('v1/devices/me/telemetry', json_encode(['data' => 'test']))
         ->andReturn(true);
 
-    $this->client->sendTelemetry(['data' => 'test']);
+    $client = new ThingsBoardMqttClient($device, $phpMqttClient);
+    $client->sendTelemetry(['data' => 'test']);
 });
 
-test('can send attributes', function() {
-    $this->phpMqttClient->shouldReceive('isConnected')
+test('can send attributes', function () {
+    $device = Mockery::mock(Device::class);
+    $device->shouldReceive('getAttribute')
+        ->with('id')
+        ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('settings')
+        ->andReturn([
+            'host' => 'localhost',
+            'port' => 1883,
+        ]);
+    $device->shouldReceive('getAttribute')
+        ->with('credentials')
+        ->andReturn([
+            'thingsboard_access_token' => 'test-token',
+        ]);
+
+    $phpMqttClient = Mockery::mock(PhpMqttClient::class);
+    $phpMqttClient->shouldReceive('connect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('disconnect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('publish')
+    $phpMqttClient->shouldReceive('publish')
         ->once()
         ->with('v1/devices/me/attributes', json_encode(['attr' => 'value']))
         ->andReturn(true);
 
-    $this->client->sendAttributes(['attr' => 'value']);
+    $client = new ThingsBoardMqttClient($device, $phpMqttClient);
+    $client->sendAttributes(['attr' => 'value']);
 });
 
-test('can subscribe to RPC requests', function() {
-    $this->phpMqttClient->shouldReceive('isConnected')
+test('can subscribe to RPC requests', function () {
+    $device = Mockery::mock(Device::class);
+    $device->shouldReceive('getAttribute')
+        ->with('id')
+        ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('settings')
+        ->andReturn([
+            'host' => 'localhost',
+            'port' => 1883,
+        ]);
+    $device->shouldReceive('getAttribute')
+        ->with('credentials')
+        ->andReturn([
+            'thingsboard_access_token' => 'test-token',
+        ]);
+
+    $phpMqttClient = Mockery::mock(PhpMqttClient::class);
+    $phpMqttClient->shouldReceive('connect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('disconnect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('subscribe')
-        ->withArgs(function($topic, $callback, $qos = 1) {
+    $phpMqttClient->shouldReceive('subscribe')
+        ->withArgs(function ($topic, $callback, $qos = 1) {
             return $topic === 'v1/devices/me/rpc/request/+' && is_callable($callback) && $qos === 1;
         })
         ->andReturn(true);
 
-    $this->client->subscribeToRpcRequests(function() {});
+    $client = new ThingsBoardMqttClient($device, $phpMqttClient);
+    $client->subscribeToRpcRequests(function () {});
 });
 
-test('can send heartbeat', function() {
-    $this->phpMqttClient->shouldReceive('isConnected')
+test('can send heartbeat', function () {
+    $device = Mockery::mock(Device::class);
+    $device->shouldReceive('getAttribute')
+        ->with('id')
+        ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('settings')
+        ->andReturn([
+            'host' => 'localhost',
+            'port' => 1883,
+        ]);
+    $device->shouldReceive('getAttribute')
+        ->with('credentials')
+        ->andReturn([
+            'thingsboard_access_token' => 'test-token',
+        ]);
+
+    $phpMqttClient = Mockery::mock(PhpMqttClient::class);
+    $phpMqttClient->shouldReceive('connect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('disconnect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('publish')
+    $phpMqttClient->shouldReceive('publish')
         ->once()
-        ->with('v1/devices/me/telemetry', Mockery::on(function($payload) {
+        ->with('v1/devices/me/telemetry', Mockery::on(function ($payload) {
             $data = json_decode($payload, true);
-            return isset($data['timestamp']) && 
-                   isset($data['status']) && 
-                   isset($data['device_id']) && 
+
+            return isset($data['timestamp']) &&
+                   isset($data['status']) &&
+                   isset($data['device_id']) &&
                    isset($data['type']) &&
                    $data['status'] === 'online' &&
                    $data['device_id'] === 1 &&
@@ -94,28 +151,144 @@ test('can send heartbeat', function() {
         }))
         ->andReturn(true);
 
-    $this->client->sendHeartbeat();
+    $client = new ThingsBoardMqttClient($device, $phpMqttClient);
+    $client->sendHeartbeat();
 });
 
-test('can report status', function() {
-    $this->phpMqttClient->shouldReceive('isConnected')
+test('can report status', function () {
+    $device = Mockery::mock(Device::class);
+    $device->shouldReceive('getAttribute')
+        ->with('id')
+        ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('settings')
+        ->andReturn([
+            'host' => 'localhost',
+            'port' => 1883,
+        ]);
+    $device->shouldReceive('getAttribute')
+        ->with('credentials')
+        ->andReturn([
+            'thingsboard_access_token' => 'test-token',
+        ]);
+
+    $phpMqttClient = Mockery::mock(PhpMqttClient::class);
+    $phpMqttClient->shouldReceive('connect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('disconnect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(true);
-    $this->phpMqttClient->shouldReceive('publish')
+    $phpMqttClient->shouldReceive('publish')
         ->once()
-        ->with('v1/devices/me/attributes', Mockery::on(function($payload) {
+        ->with('v1/devices/me/attributes', Mockery::on(function ($payload) {
             $data = json_decode($payload, true);
-            return isset($data['status']) && 
-                   isset($data['lastStatusUpdate']) && 
+
+            return isset($data['status']) &&
+                   isset($data['lastStatusUpdate']) &&
                    isset($data['statusMessage']) &&
                    $data['status'] === 'online' &&
                    $data['statusMessage'] === 'test message';
         }))
         ->andReturn(true);
 
-    $this->client->reportStatus('online', 'test message');
+    $client = new ThingsBoardMqttClient($device, $phpMqttClient);
+    $client->reportStatus('online', 'test message');
 });
 
-afterEach(function() {
+test('can send RPC response', function () {
+    $device = Mockery::mock(Device::class);
+    $device->shouldReceive('getAttribute')
+        ->with('id')
+        ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('settings')
+        ->andReturn([
+            'host' => 'localhost',
+            'port' => 1883,
+        ]);
+    $device->shouldReceive('getAttribute')
+        ->with('credentials')
+        ->andReturn([
+            'thingsboard_access_token' => 'test-token',
+        ]);
+
+    $phpMqttClient = Mockery::mock(PhpMqttClient::class);
+    $phpMqttClient->shouldReceive('connect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('disconnect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('isConnected')
+        ->once()
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('publish')
+        ->once()
+        ->with('v1/devices/me/rpc/response/123', json_encode(['result' => 'success']))
+        ->andReturn(true);
+
+    $client = new ThingsBoardMqttClient($device, $phpMqttClient);
+    $client->sendRpcResponse('123', ['result' => 'success']);
+});
+
+test('can subscribe to RPC with message DTO', function () {
+    $device = Mockery::mock(Device::class);
+    $device->shouldReceive('getAttribute')
+        ->with('id')
+        ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('settings')
+        ->andReturn([
+            'host' => 'localhost',
+            'port' => 1883,
+        ]);
+    $device->shouldReceive('getAttribute')
+        ->with('credentials')
+        ->andReturn([
+            'thingsboard_access_token' => 'test-token',
+        ]);
+
+    $phpMqttClient = Mockery::mock(PhpMqttClient::class);
+    $phpMqttClient->shouldReceive('connect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('disconnect')
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('isConnected')
+        ->once()
+        ->andReturn(true);
+    $phpMqttClient->shouldReceive('subscribe')
+        ->withArgs(function ($topic, $callback, $qos = 1) {
+            if ($topic !== 'v1/devices/me/rpc/request/+' || $qos !== 1) {
+                return false;
+            }
+
+            // Test the callback with a sample RPC message
+            $callback(
+                'v1/devices/me/rpc/request/123',
+                json_encode([
+                    'method' => 'test_method',
+                    'params' => ['param1' => 'value1']
+                ])
+            );
+
+            return true;
+        })
+        ->andReturn(true);
+
+    $client = new ThingsBoardMqttClient($device, $phpMqttClient);
+    $called = false;
+    $client->subscribeToRpc(function ($message, $requestId) use (&$called) {
+        expect($message)
+            ->toBeInstanceOf(ThingsBoardMessageDto::class)
+            ->and($message->method)->toBe('test_method')
+            ->and($message->params)->toBe(['param1' => 'value1'])
+            ->and($requestId)->toBe('123');
+        $called = true;
+    });
+
+    expect($called)->toBeTrue();
+});
+
+afterEach(function () {
     Mockery::close();
 });

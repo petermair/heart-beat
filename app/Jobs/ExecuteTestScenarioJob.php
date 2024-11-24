@@ -16,6 +16,7 @@ class ExecuteTestScenarioJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $backoff = 10;
 
     public function __construct(
@@ -24,7 +25,7 @@ class ExecuteTestScenarioJob implements ShouldQueue
 
     public function handle(TestExecutionService $executionService): void
     {
-        Log::info("Starting test scenario execution", [
+        Log::info('Starting test scenario execution', [
             'scenario_id' => $this->scenario->id,
             'test_type' => $this->scenario->test_type,
             'device_id' => $this->scenario->device_id,
@@ -34,16 +35,16 @@ class ExecuteTestScenarioJob implements ShouldQueue
             $result = $executionService->executeTest($this->scenario);
 
             // Check if we need to send notifications based on the result
-            if (!$result->success && $this->scenario->notification_settings) {
+            if (! $result->success && $this->scenario->notification_settings) {
                 // TODO: Implement notification sending
-                Log::warning("Test scenario failed - notification would be sent", [
+                Log::warning('Test scenario failed - notification would be sent', [
                     'scenario_id' => $this->scenario->id,
                     'result_id' => $result->id,
                     'error' => $result->error_message,
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error("Failed to execute test scenario", [
+            Log::error('Failed to execute test scenario', [
                 'scenario_id' => $this->scenario->id,
                 'error' => $e->getMessage(),
             ]);
@@ -59,7 +60,7 @@ class ExecuteTestScenarioJob implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        Log::error("Test scenario job failed", [
+        Log::error('Test scenario job failed', [
             'scenario_id' => $this->scenario->id,
             'error' => $exception->getMessage(),
         ]);

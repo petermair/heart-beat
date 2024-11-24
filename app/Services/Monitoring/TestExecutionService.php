@@ -3,8 +3,8 @@
 namespace App\Services\Monitoring;
 
 use App\Models\DeviceMonitoringResult;
-use App\Models\TestScenario;
 use App\Models\TestResult;
+use App\Models\TestScenario;
 use Illuminate\Support\Facades\Log;
 
 class TestExecutionService
@@ -15,8 +15,8 @@ class TestExecutionService
 
     public function executeTest(TestScenario $scenario): TestResult
     {
-        if (!$scenario->mqttDevice) {
-            throw new \InvalidArgumentException("MQTT device not configured for test scenario");
+        if (! $scenario->mqttDevice) {
+            throw new \InvalidArgumentException('MQTT device not configured for test scenario');
         }
 
         Log::info("Executing test scenario: {$scenario->name}", [
@@ -49,7 +49,7 @@ class TestExecutionService
             }
 
             // Analyze results and create test result record
-            $failedResults = array_filter($results, fn($r) => !$r->success);
+            $failedResults = array_filter($results, fn ($r) => ! $r->success);
             $status = empty($failedResults) ? TestResult::STATUS_SUCCESS : TestResult::STATUS_FAILURE;
             $errorMessage = empty($failedResults) ? null : $this->formatErrorMessages($failedResults);
 
@@ -98,7 +98,7 @@ class TestExecutionService
         ];
 
         // Determine which flows to run based on device configuration
-        if (!$scenario->httpDevice) {
+        if (! $scenario->httpDevice) {
             // MQTT only - flows 1-7
             return $flowMap[$scenario->flow_number] ?? $flowMap[1];
         }
@@ -110,7 +110,7 @@ class TestExecutionService
     private function formatErrorMessages(array $failedResults): string
     {
         return collect($failedResults)
-            ->map(fn($r) => "Flow {$r->flow_number}: {$r->error_message}")
+            ->map(fn ($r) => "Flow {$r->flow_number}: {$r->error_message}")
             ->join("\n");
     }
 
@@ -149,10 +149,23 @@ class TestExecutionService
         ]);
     }
 
-    private function executeMqttFlow1(TestScenario $scenario): DeviceMonitoringResult 
+    private function executeMqttFlow1(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
             $device = $scenario->mqttDevice;
+
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult;
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false; // Will be updated by webhook
+            $monitoringResult->response_time_ms = 0; // Will be updated by webhook
+            $monitoringResult->metadata = [
+                'flow_number' => 1,
+                'timestamp' => time(),
+                'format' => 'json->lpp',
+            ];
+            $monitoringResult->save();
 
             // Flow 1: Send JSON, receive LPP
             $result = $this->monitoringService->checkMqttStatus(
@@ -160,24 +173,17 @@ class TestExecutionService
                 'telemetry',
                 [
                     'f001digitalinput1' => 1,
-                    'f001unsigned4b2' => $this->getNextCounter(),
+                    'f001unsigned4b2' => $monitoringResult->id, // Use record ID as counter
                     'f001unsigned4b3' => time(),
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult();
-            $monitoringResult->device_id = $device->id;
-            $monitoringResult->test_scenario_id = $scenario->id;
-            $monitoringResult->success = $result['success'];
-            $monitoringResult->error_message = $result['error_message'] ?? null;
-            $monitoringResult->response_time_ms = $result['response_time_ms'] ?? 0;
-            $monitoringResult->metadata = [
-                'flow_number' => 1,
-                'counter' => $result['counter'] ?? 0,
-                'timestamp' => $result['timestamp'] ?? 0,
-                'format' => 'json->lpp',
-            ];
-            $monitoringResult->save();
+            if (!$result['success']) {
+                // Only update if send failed
+                $monitoringResult->success = false;
+                $monitoringResult->error_message = $result['error_message'] ?? 'Failed to send message';
+                $monitoringResult->save();
+            }
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -194,13 +200,26 @@ class TestExecutionService
         }
     }
 
-    private function executeMqttFlow2(TestScenario $scenario): DeviceMonitoringResult 
+    private function executeMqttFlow2(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
             $device = $scenario->mqttDevice;
 
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult;
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false; // Will be updated by webhook
+            $monitoringResult->response_time_ms = 0; // Will be updated by webhook
+            $monitoringResult->metadata = [
+                'flow_number' => 2,
+                'timestamp' => time(),
+                'format' => 'lpp->json',
+            ];
+            $monitoringResult->save();
+
             // Flow 2: Send LPP, receive JSON
-            $lppPayload = $this->createLppPayload(2, $this->getNextCounter(), time());
+            $lppPayload = $this->createLppPayload(2, $monitoringResult->id, time());
 
             $result = $this->monitoringService->checkMqttStatus(
                 $device,
@@ -211,19 +230,12 @@ class TestExecutionService
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult();
-            $monitoringResult->device_id = $device->id;
-            $monitoringResult->test_scenario_id = $scenario->id;
-            $monitoringResult->success = $result['success'];
-            $monitoringResult->error_message = $result['error_message'] ?? null;
-            $monitoringResult->response_time_ms = $result['response_time_ms'] ?? 0;
-            $monitoringResult->metadata = [
-                'flow_number' => 2,
-                'counter' => $result['counter'] ?? 0,
-                'timestamp' => $result['timestamp'] ?? 0,
-                'format' => 'lpp->json',
-            ];
-            $monitoringResult->save();
+            if (!$result['success']) {
+                // Only update if send failed
+                $monitoringResult->success = false;
+                $monitoringResult->error_message = $result['error_message'] ?? 'Failed to send message';
+                $monitoringResult->save();
+            }
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -240,7 +252,7 @@ class TestExecutionService
         }
     }
 
-    private function executeMqttFlow3(TestScenario $scenario): DeviceMonitoringResult 
+    private function executeMqttFlow3(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
             $device = $scenario->mqttDevice;
@@ -257,7 +269,7 @@ class TestExecutionService
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult();
+            $monitoringResult = new DeviceMonitoringResult;
             $monitoringResult->device_id = $device->id;
             $monitoringResult->test_scenario_id = $scenario->id;
             $monitoringResult->success = $result['success'];
@@ -286,7 +298,7 @@ class TestExecutionService
         }
     }
 
-    private function executeMqttFlow4(TestScenario $scenario): DeviceMonitoringResult 
+    private function executeMqttFlow4(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
             $device = $scenario->mqttDevice;
@@ -303,7 +315,7 @@ class TestExecutionService
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult();
+            $monitoringResult = new DeviceMonitoringResult;
             $monitoringResult->device_id = $device->id;
             $monitoringResult->test_scenario_id = $scenario->id;
             $monitoringResult->success = $result['success'];
@@ -332,7 +344,7 @@ class TestExecutionService
         }
     }
 
-    private function executeMqttFlow5(TestScenario $scenario): DeviceMonitoringResult 
+    private function executeMqttFlow5(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
             $device = $scenario->mqttDevice;
@@ -377,7 +389,7 @@ class TestExecutionService
         }
     }
 
-    private function executeMqttFlow6(TestScenario $scenario): DeviceMonitoringResult 
+    private function executeMqttFlow6(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
             $device = $scenario->mqttDevice;
@@ -422,7 +434,7 @@ class TestExecutionService
         }
     }
 
-    private function executeMqttFlow7(TestScenario $scenario): DeviceMonitoringResult 
+    private function executeMqttFlow7(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
             $device = $scenario->mqttDevice;
@@ -439,7 +451,7 @@ class TestExecutionService
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult();
+            $monitoringResult = new DeviceMonitoringResult;
             $monitoringResult->device_id = $device->id;
             $monitoringResult->test_scenario_id = $scenario->id;
             $monitoringResult->success = $result['success'];
@@ -501,8 +513,8 @@ class TestExecutionService
     private function executeHttpFlow8(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
-            if (!$scenario->httpDevice) {
-                throw new \InvalidArgumentException("HTTP device not configured for test scenario");
+            if (! $scenario->httpDevice) {
+                throw new \InvalidArgumentException('HTTP device not configured for test scenario');
             }
 
             $device = $scenario->httpDevice;
@@ -518,7 +530,7 @@ class TestExecutionService
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult();
+            $monitoringResult = new DeviceMonitoringResult;
             $monitoringResult->device_id = $device->id;
             $monitoringResult->test_scenario_id = $scenario->id;
             $monitoringResult->success = $result['success'];
@@ -551,8 +563,8 @@ class TestExecutionService
     private function executeHttpFlow9(TestScenario $scenario): DeviceMonitoringResult
     {
         try {
-            if (!$scenario->httpDevice) {
-                throw new \InvalidArgumentException("HTTP device not configured for test scenario");
+            if (! $scenario->httpDevice) {
+                throw new \InvalidArgumentException('HTTP device not configured for test scenario');
             }
 
             $device = $scenario->httpDevice;
@@ -569,7 +581,7 @@ class TestExecutionService
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult();
+            $monitoringResult = new DeviceMonitoringResult;
             $monitoringResult->device_id = $device->id;
             $monitoringResult->test_scenario_id = $scenario->id;
             $monitoringResult->success = $result['success'];
@@ -610,12 +622,12 @@ class TestExecutionService
 
         // Channel 2: counter (4 bytes)
         $buffer .= chr(2);                    // Channel
-        $buffer .= chr(0xfe);                 // Type (Unsigned 4B)
+        $buffer .= chr(0xFE);                 // Type (Unsigned 4B)
         $buffer .= pack('N', $counter);       // Value (big-endian)
 
         // Channel 3: timestamp (4 bytes)
         $buffer .= chr(3);                    // Channel
-        $buffer .= chr(0xfe);                 // Type (Unsigned 4B)
+        $buffer .= chr(0xFE);                 // Type (Unsigned 4B)
         $buffer .= pack('N', $timestamp);     // Value (big-endian)
 
         return $buffer;
@@ -624,6 +636,7 @@ class TestExecutionService
     private function getNextCounter(): int
     {
         static $counter = 0;
+
         return ++$counter;
     }
 }

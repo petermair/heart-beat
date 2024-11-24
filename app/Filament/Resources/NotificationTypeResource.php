@@ -9,7 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Invaders\JsonEditor\JsonEditor;
 use InvadersXX\FilamentJsoneditor\Forms\JSONEditor as FormsJSONEditor;
 
 class NotificationTypeResource extends Resource
@@ -17,7 +16,7 @@ class NotificationTypeResource extends Resource
     protected static ?string $model = NotificationType::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-bell';
-    
+
     protected static ?string $navigationGroup = 'Settings';
 
     protected static ?int $navigationSort = 10;
@@ -59,7 +58,7 @@ class NotificationTypeResource extends Resource
                                     'type' => 'url',
                                     'label' => 'Webhook URL',
                                     'required' => true,
-                                    'help' => 'The URL to send notifications to'
+                                    'help' => 'The URL to send notifications to',
                                 ],
                                 'method' => [
                                     'type' => 'select',
@@ -68,16 +67,16 @@ class NotificationTypeResource extends Resource
                                     'options' => [
                                         'POST' => 'POST',
                                         'GET' => 'GET',
-                                        'PUT' => 'PUT'
+                                        'PUT' => 'PUT',
                                     ],
-                                    'default' => 'POST'
+                                    'default' => 'POST',
                                 ],
                                 'headers' => [
                                     'type' => 'text',
                                     'label' => 'HTTP Headers',
                                     'required' => false,
-                                    'help' => 'Additional headers in JSON format'
-                                ]
+                                    'help' => 'Additional headers in JSON format',
+                                ],
                             ])
                             ->helperText('Each field should have: type (text, number, url, email, select), label, required (true/false), and optional help text')
                             ->columnSpanFull(),

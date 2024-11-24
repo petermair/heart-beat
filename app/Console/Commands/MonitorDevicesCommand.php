@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 class MonitorDevicesCommand extends Command
 {
     protected $signature = 'devices:monitor {--device-id= : Specific device ID to monitor}';
+
     protected $description = 'Monitor devices status';
 
     public function handle(): int

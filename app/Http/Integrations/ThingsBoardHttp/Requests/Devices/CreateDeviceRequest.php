@@ -19,7 +19,7 @@ class CreateDeviceRequest extends Request implements HasBody
 
     public function resolveEndpoint(): string
     {
-        return "/api/device";
+        return '/api/device';
     }
 
     protected function defaultBody(): array

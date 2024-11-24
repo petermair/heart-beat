@@ -20,7 +20,7 @@ return new class extends Migration
                 'TB_MQTT_HEALTH',
                 'CS_MQTT_HEALTH',
                 'TB_HTTP_HEALTH',
-                'CS_HTTP_HEALTH'
+                'CS_HTTP_HEALTH',
             ]);
             $table->timestamp('start_time');
             $table->timestamp('end_time')->nullable();
@@ -32,7 +32,7 @@ return new class extends Migration
                 'CHIRPSTACK',
                 'MQTT',
                 'LORATX',
-                'LORARX'
+                'LORARX',
             ])->nullable(); // Only set when status is FAILURE
             $table->timestamps();
 

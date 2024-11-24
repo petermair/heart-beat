@@ -26,7 +26,7 @@ class DeviceQueueHttpRequest extends Request implements HasBody
     protected function defaultBody(): array
     {
         return [
-            'deviceQueueItem' => $this->queueItem
+            'deviceQueueItem' => $this->queueItem,
         ];
     }
 }

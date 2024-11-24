@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * 
- *
  * @property int $id
  * @property int $test_scenario_id
  * @property int $notification_type_id
@@ -18,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\NotificationType $notificationType
  * @property-read \App\Models\TestScenario $testScenario
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotification newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotification newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotification query()
@@ -29,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotification whereTestScenarioId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotification whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotification whereWarningThreshold($value)
+ *
  * @mixin \Eloquent
  */
 class TestScenarioNotification extends Model

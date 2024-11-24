@@ -2,13 +2,14 @@
 
 namespace App\Services\Mqtt;
 
-use App\Models\Device;
 use App\DataTransferObjects\ChirpStackMessageDto;
+use App\Models\Device;
 use RuntimeException;
 
 class ChirpStackMqttClient extends MqttClient
 {
     private Device $device;
+
     private string $applicationId;
 
     public function __construct(Device $device, $phpMqttClient = null)
@@ -17,12 +18,12 @@ class ChirpStackMqttClient extends MqttClient
         $server = $device->chirpstackServer;
         $broker = $server->mqttBroker;
 
-        if (!$broker) {
+        if (! $broker) {
             throw new RuntimeException('MQTT broker configuration is required');
         }
 
         $this->applicationId = $device->application_id;
-        
+
         $config = [
             'host' => $broker->host,
             'port' => $broker->port,
@@ -31,7 +32,7 @@ class ChirpStackMqttClient extends MqttClient
             'password' => '',
             'last_will_topic' => $this->getDeviceStatusTopic(),
             'last_will_message' => json_encode(['status' => 'offline']),
-            'last_will_qos' => 1
+            'last_will_qos' => 1,
         ];
 
         parent::__construct($config, $phpMqttClient);
@@ -72,7 +73,7 @@ class ChirpStackMqttClient extends MqttClient
         $this->subscribe($this->getUplinkTopic(), function ($topic, $message) use ($callback) {
             $payload = json_decode($message, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException("Invalid JSON in uplink message: " . json_last_error_msg());
+                throw new RuntimeException('Invalid JSON in uplink message: '.json_last_error_msg());
             }
             $callback(ChirpStackMessageDto::fromUplink($payload), $topic);
         });
@@ -83,7 +84,7 @@ class ChirpStackMqttClient extends MqttClient
         $this->subscribe($this->getDownlinkTopic(), function ($topic, $message) use ($callback) {
             $payload = json_decode($message, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException("Invalid JSON in downlink message: " . json_last_error_msg());
+                throw new RuntimeException('Invalid JSON in downlink message: '.json_last_error_msg());
             }
             $callback(ChirpStackMessageDto::fromDownlink($payload), $topic);
         });
@@ -94,7 +95,7 @@ class ChirpStackMqttClient extends MqttClient
         $this->subscribe($this->getJoinTopic(), function ($topic, $message) use ($callback) {
             $payload = json_decode($message, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException("Invalid JSON in join message: " . json_last_error_msg());
+                throw new RuntimeException('Invalid JSON in join message: '.json_last_error_msg());
             }
             $callback(ChirpStackMessageDto::fromJoin($payload), $topic);
         });
@@ -105,7 +106,7 @@ class ChirpStackMqttClient extends MqttClient
         $this->subscribe($this->getAckTopic(), function ($topic, $message) use ($callback) {
             $payload = json_decode($message, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException("Invalid JSON in ack message: " . json_last_error_msg());
+                throw new RuntimeException('Invalid JSON in ack message: '.json_last_error_msg());
             }
             $callback(ChirpStackMessageDto::fromAck($payload), $topic);
         });
@@ -116,7 +117,7 @@ class ChirpStackMqttClient extends MqttClient
         $this->subscribe($this->getErrorTopic(), function ($topic, $message) use ($callback) {
             $payload = json_decode($message, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException("Invalid JSON in error message: " . json_last_error_msg());
+                throw new RuntimeException('Invalid JSON in error message: '.json_last_error_msg());
             }
             $callback(ChirpStackMessageDto::fromError($payload, $payload['error'] ?? 'Unknown error'), $topic);
         });
@@ -129,8 +130,8 @@ class ChirpStackMqttClient extends MqttClient
                 'confirmed' => $confirm,
                 'data' => base64_encode(json_encode($data)),
                 'devEUI' => $deviceEui,
-                'fPort' => $fPort
-            ]
+                'fPort' => $fPort,
+            ],
         ];
 
         $topic = "application/{$this->applicationId}/device/{$deviceEui}/command/down";
@@ -142,7 +143,7 @@ class ChirpStackMqttClient extends MqttClient
         $payload = array_merge([
             'status' => $status,
             'timestamp' => time() * 1000,
-            'device_id' => $this->device->id
+            'device_id' => $this->device->id,
         ], $metadata);
 
         $this->publish($this->getDeviceStatusTopic(), json_encode($payload));

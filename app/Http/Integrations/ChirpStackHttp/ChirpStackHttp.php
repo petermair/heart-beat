@@ -2,13 +2,13 @@
 
 namespace App\Http\Integrations\ChirpStackHttp;
 
+use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceMessagesRequest;
+use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceRequest;
+use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceStatusRequest;
+use Saloon\Contracts\Authenticator;
+use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AcceptsJson;
-use Saloon\Http\Auth\TokenAuthenticator;
-use Saloon\Contracts\Authenticator;
-use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceMessagesRequest;
-use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceStatusRequest;
-use App\Http\Integrations\ChirpStackHttp\Requests\Devices\DeviceRequest;
 
 class ChirpStackHttp extends Connector
 {
@@ -27,6 +27,7 @@ class ChirpStackHttp extends Connector
     public function setBaseUrl(string $baseUrl): static
     {
         $this->baseUrl = $baseUrl;
+
         return $this;
     }
 
@@ -41,12 +42,14 @@ class ChirpStackHttp extends Connector
         if ($authenticator instanceof TokenAuthenticator) {
             $this->token = $authenticator->token;
         }
+
         return $this;
     }
 
     public function withToken(string $token): static
     {
         $this->token = $token;
+
         return $this->authenticate(new TokenAuthenticator($token));
     }
 
@@ -68,8 +71,9 @@ class ChirpStackHttp extends Connector
 
     /**
      * Get device messages
-     * @param string $applicationId Application ID
-     * @param string $deviceEui Device EUI
+     *
+     * @param  string  $applicationId  Application ID
+     * @param  string  $deviceEui  Device EUI
      * @return \Saloon\Http\Response Response
      */
     public function deviceMessages(string $applicationId, string $deviceEui)
@@ -79,8 +83,9 @@ class ChirpStackHttp extends Connector
 
     /**
      * Get device status
-     * @param string $applicationId Application ID
-     * @param string $deviceEui Device EUI
+     *
+     * @param  string  $applicationId  Application ID
+     * @param  string  $deviceEui  Device EUI
      * @return \Saloon\Http\Response Response
      */
     public function deviceStatus(string $applicationId, string $deviceEui)
@@ -90,8 +95,9 @@ class ChirpStackHttp extends Connector
 
     /**
      * Get device info
-     * @param string $applicationId Application ID
-     * @param string $deviceEui Device EUI
+     *
+     * @param  string  $applicationId  Application ID
+     * @param  string  $deviceEui  Device EUI
      * @return \Saloon\Http\Response Response
      */
     public function device(string $applicationId, string $deviceEui)

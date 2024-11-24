@@ -8,10 +8,15 @@ use Carbon\Carbon;
 class MqttHeartbeatTest implements TestInterface
 {
     protected ThingsBoardMqttClient $mqttClient;
+
     protected string $requestId;
+
     protected bool $responseReceived = false;
+
     protected Carbon $startTime;
+
     protected ?string $errorMessage = null;
+
     protected ?float $responseTime = null;
 
     public function __construct(ThingsBoardMqttClient $mqttClient)
@@ -24,23 +29,23 @@ class MqttHeartbeatTest implements TestInterface
         try {
             $this->startTime = now();
             $this->requestId = uniqid('hb_', true);
-            
+
             // Send heart-beat message
             $this->mqttClient->sendTelemetry([
                 'heartbeat' => [
                     'requestId' => $this->requestId,
                     'timestamp' => now()->toIso8601String(),
-                    'type' => 'mqtt-heartbeat'
-                ]
+                    'type' => 'mqtt-heartbeat',
+                ],
             ]);
 
             // Wait for response with timeout
             $timeout = now()->addSeconds(30);
-            while (!$this->responseReceived && now()->lt($timeout)) {
+            while (! $this->responseReceived && now()->lt($timeout)) {
                 usleep(100000); // 100ms
             }
 
-            if (!$this->responseReceived) {
+            if (! $this->responseReceived) {
                 throw new \RuntimeException('Heart-beat response timeout');
             }
 

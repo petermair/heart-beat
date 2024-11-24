@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+use App\Models\Device;
+use App\Services\Mqtt\ChirpStackMqttClient;
 use App\Services\Mqtt\MqttMonitor;
 use App\Services\Mqtt\ThingsBoardMqttClient;
-use App\Services\Mqtt\ChirpStackMqttClient;
-use App\Models\Device;
+use Illuminate\Console\Command;
 
 class MonitorMqttCommand extends Command
 {
@@ -26,16 +26,15 @@ class MonitorMqttCommand extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return int
      */
     public function handle(): int
     {
         $deviceId = $this->argument('device_id');
         $device = Device::findOrFail($deviceId);
 
-        if (!$device->is_active || !$device->monitoring_enabled) {
+        if (! $device->is_active || ! $device->monitoring_enabled) {
             $this->error('Device is not active or monitoring is disabled');
+
             return 1;
         }
 
@@ -58,14 +57,15 @@ class MonitorMqttCommand extends Command
             $monitor->startMonitoring();
 
             // Keep the script running with proper exit condition
-            while (!$monitor->isStopped()) {
+            while (! $monitor->isStopped()) {
                 pcntl_signal_dispatch();
                 sleep(1);
             }
 
             return 0;
         } catch (\Exception $e) {
-            $this->error('Error: ' . $e->getMessage());
+            $this->error('Error: '.$e->getMessage());
+
             return 1;
         }
     }

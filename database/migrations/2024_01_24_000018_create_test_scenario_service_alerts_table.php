@@ -16,7 +16,7 @@ return new class extends Migration
                 'CHIRPSTACK',
                 'MQTT',
                 'LORATX',
-                'LORARX'
+                'LORARX',
             ]);
             $table->enum('alert_type', ['CRITICAL', 'WARNING']);
             $table->enum('status', ['ACTIVE', 'RESOLVED']);

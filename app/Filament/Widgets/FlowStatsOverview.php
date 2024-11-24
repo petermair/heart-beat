@@ -5,7 +5,6 @@ namespace App\Filament\Widgets;
 use App\Models\TestResult;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\DB;
 
 class FlowStatsOverview extends BaseWidget
 {
@@ -21,7 +20,7 @@ class FlowStatsOverview extends BaseWidget
             'DIRECT_TEST_1',
             'DIRECT_TEST_2',
             'TB_MQTT_HEALTH',
-            'CS_MQTT_HEALTH'
+            'CS_MQTT_HEALTH',
         ];
 
         $mqttStats = TestResult::where('created_at', '>=', now()->subDay())
@@ -50,17 +49,17 @@ class FlowStatsOverview extends BaseWidget
         $httpSuccessRate = $httpStats->total > 0 ? ($httpStats->successes * 100 / $httpStats->total) : 0;
 
         return [
-            Stat::make('MQTT Success Rate (24h)', number_format($mqttSuccessRate, 1) . '%')
+            Stat::make('MQTT Success Rate (24h)', number_format($mqttSuccessRate, 1).'%')
                 ->description('Flows 1-7')
                 ->icon('heroicon-o-signal')
                 ->color($mqttSuccessRate >= 90 ? 'success' : ($mqttSuccessRate >= 75 ? 'warning' : 'danger')),
 
-            Stat::make('MQTT Avg Response', number_format($mqttStats->avg_response ?? 0, 0) . 'ms')
+            Stat::make('MQTT Avg Response', number_format($mqttStats->avg_response ?? 0, 0).'ms')
                 ->description('Average response time')
                 ->icon('heroicon-o-clock')
                 ->color('info'),
 
-            Stat::make('HTTP Success Rate (24h)', number_format($httpSuccessRate, 1) . '%')
+            Stat::make('HTTP Success Rate (24h)', number_format($httpSuccessRate, 1).'%')
                 ->description('HTTP Health Checks')
                 ->icon('heroicon-o-globe-alt')
                 ->color($httpSuccessRate >= 90 ? 'success' : ($httpSuccessRate >= 75 ? 'warning' : 'danger')),

@@ -15,7 +15,7 @@ class ThingsBoardMqttClient extends MqttClient
         $server = $device->thingsboardServer;
         $broker = $server->mqttBroker;
 
-        if (!$broker) {
+        if (! $broker) {
             throw new RuntimeException('MQTT broker configuration is required');
         }
 
@@ -25,9 +25,9 @@ class ThingsBoardMqttClient extends MqttClient
             'client_id' => "tb_monitor_{$device->id}",
             'username' => $server->credentials['access_token'] ?? throw new RuntimeException('Access token is required'),
             'password' => '',
-            'last_will_topic' => "v1/devices/me/attributes",
+            'last_will_topic' => 'v1/devices/me/attributes',
             'last_will_message' => json_encode(['status' => 'offline']),
-            'last_will_qos' => 1
+            'last_will_qos' => 1,
         ];
 
         parent::__construct($config, $phpMqttClient);
@@ -59,7 +59,7 @@ class ThingsBoardMqttClient extends MqttClient
             // Parse message
             $payload = json_decode($message, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException("Invalid JSON in RPC request: " . json_last_error_msg());
+                throw new RuntimeException('Invalid JSON in RPC request: '.json_last_error_msg());
             }
 
             // Call callback with parsed data
@@ -78,7 +78,7 @@ class ThingsBoardMqttClient extends MqttClient
             'timestamp' => time() * 1000,
             'status' => 'online',
             'device_id' => $this->device->id,
-            'type' => 'heartbeat'
+            'type' => 'heartbeat',
         ];
 
         $this->sendTelemetry($heartbeat);
@@ -88,7 +88,7 @@ class ThingsBoardMqttClient extends MqttClient
     {
         $attributes = [
             'status' => $status,
-            'lastStatusUpdate' => time() * 1000
+            'lastStatusUpdate' => time() * 1000,
         ];
 
         if ($message !== null) {
@@ -110,9 +110,9 @@ class ThingsBoardMqttClient extends MqttClient
             $message = ThingsBoardMessageDto::fromRpc([
                 'deviceName' => $this->device->name ?? 'unknown',
                 'method' => $payload['method'] ?? null,
-                'params' => $payload['params'] ?? []
+                'params' => $payload['params'] ?? [],
             ]);
-            
+
             $callback($message, $requestId);
         });
     }

@@ -11,6 +11,6 @@ class ListDevicesRequest extends Request
 
     public function resolveEndpoint(): string
     {
-        return "/api/tenant/devices";
+        return '/api/tenant/devices';
     }
 }

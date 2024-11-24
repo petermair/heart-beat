@@ -10,14 +10,15 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 class NotificationSettingResource extends Resource
 {
     protected static ?string $model = NotificationSetting::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-bell-alert';
+
     protected static ?string $navigationGroup = 'Settings';
+
     protected static ?int $navigationSort = 11;
 
     public static function form(Form $form): Form
@@ -43,7 +44,7 @@ class NotificationSettingResource extends Resource
                 Forms\Components\Section::make('Configuration')
                     ->schema(function (Forms\Get $get) {
                         $notificationType = NotificationType::find($get('notification_type_id'));
-                        if (!$notificationType) {
+                        if (! $notificationType) {
                             return [
                                 Forms\Components\Placeholder::make('configuration_help')
                                     ->content('Please select a notification type first.'),
@@ -158,12 +159,12 @@ class NotificationSettingResource extends Resource
 
     private static function getConfigurationHelp(?int $notificationTypeId): string
     {
-        if (!$notificationTypeId) {
+        if (! $notificationTypeId) {
             return 'Select a notification type to see configuration options.';
         }
 
         $type = \App\Models\NotificationType::find($notificationTypeId);
-        if (!$type) {
+        if (! $type) {
             return 'Invalid notification type selected.';
         }
 

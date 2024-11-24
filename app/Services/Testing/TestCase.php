@@ -5,9 +5,13 @@ namespace App\Services\Testing;
 abstract class TestCase
 {
     protected string $id;
+
     protected string $status = 'pending';
+
     protected int $retries = 0;
+
     protected ?string $lastError = null;
+
     protected array $results = [];
 
     public function __construct(

@@ -1,10 +1,9 @@
 <?php
 
 use App\Services\Mqtt\MqttClient;
-use PhpMqtt\Client\MqttClient as PhpMqttClient;
 use PhpMqtt\Client\ConnectionSettings;
 
-beforeEach(function() {
+beforeEach(function () {
     $this->config = [
         'host' => 'localhost',
         'port' => 1883,
@@ -12,18 +11,18 @@ beforeEach(function() {
         'username' => 'test-user',
         'password' => 'test-pass',
         'last_will_topic' => 'test/lwt',
-        'last_will_message' => 'offline'
+        'last_will_message' => 'offline',
     ];
-    $this->phpMqttClient = mock(PhpMqttClient::class);
+    $this->phpMqttClient = Mockery::mock(MqttClient::class);
     $this->client = new MqttClient($this->config, $this->phpMqttClient);
 });
 
-test('can create mqtt client', function() {
+test('can create mqtt client', function () {
     $client = new MqttClient($this->config);
     expect($client)->toBeInstanceOf(MqttClient::class);
 });
 
-test('can connect to broker', function() {
+test('can connect to broker', function () {
     $this->phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(false);
@@ -37,7 +36,7 @@ test('can connect to broker', function() {
     expect($this->client)->toBeObject();
 });
 
-test('can publish message', function() {
+test('can publish message', function () {
     $topic = 'test/topic';
     $message = 'test message';
 
@@ -52,9 +51,9 @@ test('can publish message', function() {
     $this->client->publish($topic, $message);
 });
 
-test('can subscribe to topic', function() {
+test('can subscribe to topic', function () {
     $topic = 'test/topic';
-    $callback = function($message) {};
+    $callback = function ($message) {};
 
     $this->phpMqttClient->shouldReceive('isConnected')
         ->once()
@@ -68,7 +67,7 @@ test('can subscribe to topic', function() {
     $this->client->subscribe($topic, $callback);
 });
 
-test('can disconnect', function() {
+test('can disconnect', function () {
     $this->phpMqttClient->shouldReceive('isConnected')
         ->once()
         ->andReturn(true);
@@ -79,6 +78,6 @@ test('can disconnect', function() {
     $this->client->disconnect();
 });
 
-afterEach(function() {
+afterEach(function () {
     Mockery::close();
 });

@@ -2,8 +2,8 @@
 
 namespace App\Services\ThingsBoard;
 
-use App\Http\Integrations\ThingsBoardHttp\ThingsBoardHttp;
 use App\Http\Integrations\ThingsBoardHttp\Requests\LoginHttpRequest;
+use App\Http\Integrations\ThingsBoardHttp\ThingsBoardHttp;
 use App\Models\Device;
 use Exception;
 
@@ -14,38 +14,30 @@ class ThingsBoardService
 {
     /**
      * Authentication token
-     *
-     * @var string|null
      */
     protected ?string $token = null;
 
     /**
      * ThingsBoard HTTP client
-     *
-     * @var ThingsBoardHttp
      */
     protected ThingsBoardHttp $client;
 
     /**
      * ThingsBoard username
-     *
-     * @var string
      */
     protected string $username;
 
     /**
      * ThingsBoard password
-     *
-     * @var string
      */
     protected string $password;
 
     /**
      * Constructor
      *
-     * @param ThingsBoardHttp $client ThingsBoard HTTP client
-     * @param string $username ThingsBoard username
-     * @param string $password ThingsBoard password
+     * @param  ThingsBoardHttp  $client  ThingsBoard HTTP client
+     * @param  string  $username  ThingsBoard username
+     * @param  string  $password  ThingsBoard password
      */
     public function __construct(
         ThingsBoardHttp $client,
@@ -69,7 +61,7 @@ class ThingsBoardService
             'password' => $this->password,
         ]));
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             throw new \Exception('Failed to authenticate with ThingsBoard');
         }
 
@@ -80,13 +72,14 @@ class ThingsBoardService
     /**
      * Get list of devices from ThingsBoard
      *
-     * @param string $server The ThingsBoard server URL
+     * @param  string  $server  The ThingsBoard server URL
      * @return array<string, mixed> List of devices
+     *
      * @throws \Exception When authentication fails
      */
     public function getDevices(string $server): array
     {
-        if (!$this->token) {
+        if (! $this->token) {
             $this->login();
         }
 
@@ -98,21 +91,21 @@ class ThingsBoardService
     /**
      * Get device status from ThingsBoard
      *
-     * @param string $server The ThingsBoard server URL
-     * @param string $deviceEui The device EUI
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  string  $deviceEui  The device EUI
      * @return bool True if device is active, false otherwise
      */
     public function getDeviceStatus(string $server, string $deviceEui): bool
     {
         try {
-            if (!$this->token) {
+            if (! $this->token) {
                 $this->login();
             }
 
             $response = $this->client->setBaseUrl($server)
                 ->deviceStatus($deviceEui)
                 ->json();
-            
+
             return isset($response['active']) && $response['active'] === true;
         } catch (\Exception $e) {
             return false;
@@ -122,21 +115,21 @@ class ThingsBoardService
     /**
      * Get device status from ThingsBoard via HTTP
      *
-     * @param string $server The ThingsBoard server URL
-     * @param string $deviceEui The device EUI
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  string  $deviceEui  The device EUI
      * @return bool True if device is active, false otherwise
      */
     public function getDeviceStatusHttp(string $server, string $deviceEui): bool
     {
         try {
-            if (!$this->token) {
+            if (! $this->token) {
                 $this->login();
             }
 
             $response = $this->client->setBaseUrl($server)
                 ->deviceStatus($deviceEui)
                 ->json();
-            
+
             return isset($response['active']) && $response['active'] === true;
         } catch (\Exception $e) {
             return false;
@@ -146,14 +139,15 @@ class ThingsBoardService
     /**
      * Create a new device in ThingsBoard
      *
-     * @param string $server The ThingsBoard server URL
-     * @param array<string, mixed> $data Device data
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  array<string, mixed>  $data  Device data
      * @return array<string, mixed> Created device data
+     *
      * @throws \Exception When authentication fails
      */
     public function createDevice(string $server, array $data): array
     {
-        if (!$this->token) {
+        if (! $this->token) {
             $this->login();
         }
 
@@ -164,15 +158,16 @@ class ThingsBoardService
 
     /**
      * Check device telemetry data
-     * @param string $server The ThingsBoard server URL
-     * @param string $deviceEui The device EUI
-     * @param array $dataPoints Expected data points
+     *
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  string  $deviceEui  The device EUI
+     * @param  array  $dataPoints  Expected data points
      * @return array Check result
      */
     public function checkTelemetryData(string $server, string $deviceEui, array $dataPoints = []): array
     {
         try {
-            if (!$this->token) {
+            if (! $this->token) {
                 $this->login();
             }
 
@@ -182,18 +177,18 @@ class ThingsBoardService
 
             $foundDataPoints = [];
             foreach ($dataPoints as $point) {
-                if (isset($response[$point]) && !empty($response[$point])) {
+                if (isset($response[$point]) && ! empty($response[$point])) {
                     $foundDataPoints[] = $point;
                 }
             }
 
             $allFound = count($foundDataPoints) === count($dataPoints);
-            
+
             return [
                 'success' => $allFound,
                 'data_points_found' => $foundDataPoints,
-                'error_message' => !$allFound 
-                    ? 'Missing required data points: ' . implode(', ', array_diff($dataPoints, $foundDataPoints))
+                'error_message' => ! $allFound
+                    ? 'Missing required data points: '.implode(', ', array_diff($dataPoints, $foundDataPoints))
                     : null,
             ];
         } catch (\Exception $e) {
@@ -207,16 +202,17 @@ class ThingsBoardService
 
     /**
      * Execute RPC call on device
-     * @param string $server The ThingsBoard server URL
-     * @param string $deviceEui The device EUI
-     * @param string $method RPC method name
-     * @param array $params RPC method parameters
+     *
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  string  $deviceEui  The device EUI
+     * @param  string  $method  RPC method name
+     * @param  array  $params  RPC method parameters
      * @return array Call result
      */
     public function executeRpcCall(string $server, string $deviceEui, string $method, array $params = []): array
     {
         try {
-            if (!$this->token) {
+            if (! $this->token) {
                 $this->login();
             }
 
@@ -230,7 +226,7 @@ class ThingsBoardService
             return [
                 'success' => isset($response['response']),
                 'response' => $response['response'] ?? null,
-                'error_message' => !isset($response['response'])
+                'error_message' => ! isset($response['response'])
                     ? 'No response received from device'
                     : null,
             ];
@@ -246,8 +242,8 @@ class ThingsBoardService
     /**
      * Send a command to a device
      *
-     * @param Device $device Device to send command to
-     * @param array<string, mixed> $command Command data
+     * @param  Device  $device  Device to send command to
+     * @param  array<string, mixed>  $command  Command data
      * @return bool Success status
      */
     public function sendDeviceCommand(Device $device, array $command): bool
@@ -255,6 +251,7 @@ class ThingsBoardService
         try {
             $this->ensureAuthenticated();
             $response = $this->client->sendDeviceCommand($device->id, $command);
+
             return $response->ok();
         } catch (Exception $e) {
             return false;
@@ -264,8 +261,8 @@ class ThingsBoardService
     /**
      * Wait for telemetry from a device
      *
-     * @param Device $device Device to wait for
-     * @param int $timeout Timeout in seconds
+     * @param  Device  $device  Device to wait for
+     * @param  int  $timeout  Timeout in seconds
      * @return bool Success status
      */
     public function waitForTelemetry(Device $device, int $timeout = 30): bool
@@ -275,11 +272,12 @@ class ThingsBoardService
             $startTime = time();
             while (time() - $startTime < $timeout) {
                 $telemetry = $this->client->getLatestTelemetry($device->id);
-                if ($telemetry->json() && !empty($telemetry->json())) {
+                if ($telemetry->json() && ! empty($telemetry->json())) {
                     return true;
                 }
                 sleep(1);
             }
+
             return false;
         } catch (Exception $e) {
             return false;
@@ -289,7 +287,7 @@ class ThingsBoardService
     /**
      * Test MQTT connection
      *
-     * @param Device $device Device to test
+     * @param  Device  $device  Device to test
      * @return bool Success status
      */
     public function testMqttConnection(Device $device): bool
@@ -297,6 +295,7 @@ class ThingsBoardService
         try {
             $this->ensureAuthenticated();
             $response = $this->client->testMqttConnection($device->id);
+
             return $response->ok();
         } catch (Exception $e) {
             return false;
@@ -306,7 +305,7 @@ class ThingsBoardService
     /**
      * Test HTTP connection
      *
-     * @param Device $device Device to test
+     * @param  Device  $device  Device to test
      * @return bool Success status
      */
     public function testHttpConnection(Device $device): bool
@@ -314,6 +313,7 @@ class ThingsBoardService
         try {
             $this->ensureAuthenticated();
             $response = $this->client->testHttpConnection($device->id);
+
             return $response->ok();
         } catch (Exception $e) {
             return false;
@@ -333,7 +333,7 @@ class ThingsBoardService
                 'password' => $this->password,
             ]));
 
-            if (!$response->ok()) {
+            if (! $response->ok()) {
                 throw new Exception('Failed to authenticate with ThingsBoard');
             }
 

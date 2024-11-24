@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\DB;
 class ResponseTimeChart extends ChartWidget
 {
     protected static ?string $heading = 'Response Times by Flow Type';
+
     protected static ?string $maxHeight = '300px';
+
     protected static ?string $pollingInterval = '15s';
 
     protected function getData(): array
@@ -43,8 +45,8 @@ class ResponseTimeChart extends ChartWidget
         foreach ($flowStats as $stat) {
             $flowType = $stat->flow_type;
             $protocol = str_contains($flowType, 'HTTP') ? 'HTTP' : 'MQTT';
-            
-            $labels[] = str_replace('_', ' ', $flowType) . "\n({$protocol})";
+
+            $labels[] = str_replace('_', ' ', $flowType)."\n({$protocol})";
             $avgData[] = round($stat->avg_response ?? 0);
             $minData[] = round($stat->min_response ?? 0);
             $maxData[] = round($stat->max_response ?? 0);

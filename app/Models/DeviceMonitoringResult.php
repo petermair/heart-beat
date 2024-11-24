@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * 
- *
  * @property int $id
  * @property int $device_id
  * @property bool $chirpstack_status
@@ -24,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Device $device
  * @property-read \App\Models\TestScenario $testScenario
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceMonitoringResult newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceMonitoringResult newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceMonitoringResult query()
@@ -41,8 +40,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceMonitoringResult whereThingsboardResponseTime($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceMonitoringResult whereThingsboardStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceMonitoringResult whereUpdatedAt($value)
+ *
  * @property int|null $test_scenario_id
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceMonitoringResult whereTestScenarioId($value)
+ *
  * @mixin \Eloquent
  */
 class DeviceMonitoringResult extends Model
@@ -58,7 +60,7 @@ class DeviceMonitoringResult extends Model
         'test_type',
         'additional_data',
         'response_time_ms',
-        'metadata'
+        'metadata',
     ];
 
     protected $casts = [
@@ -66,7 +68,7 @@ class DeviceMonitoringResult extends Model
         'thingsboard_status' => 'boolean',
         'success' => 'boolean',
         'additional_data' => 'array',
-        'metadata' => 'array'
+        'metadata' => 'array',
     ];
 
     public function device(): BelongsTo

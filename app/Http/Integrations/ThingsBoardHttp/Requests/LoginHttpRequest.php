@@ -16,9 +16,6 @@ class LoginHttpRequest extends Request implements HasBody
      */
     protected Method $method = Method::POST;
 
-    /**
-     * @param array $credentials
-     */
     public function __construct(
         protected array $credentials
     ) {}

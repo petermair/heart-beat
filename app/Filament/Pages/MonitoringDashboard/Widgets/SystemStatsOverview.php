@@ -14,10 +14,10 @@ class SystemStatsOverview extends BaseWidget
     {
         $totalDevices = Device::count();
         $activeScenarios = TestScenario::count();
-        $lastHourSuccess = TestResult::where('created_at', '>=', now()->subHour())
+        $lastHourResult = TestResult::where('created_at', '>=', now()->subHour())
             ->selectRaw('(COUNT(CASE WHEN success = 1 THEN 1 END) * 100.0 / COUNT(*)) as success_rate')
-            ->first()
-            ?->success_rate ?? 0;
+            ->first();
+        $lastHourSuccess = $lastHourResult ? $lastHourResult->success_rate : 0;
 
         return [
             Stat::make('Total Devices', (string)$totalDevices)

@@ -157,10 +157,8 @@ class ServerResource extends Resource
                                         return 'No devices found';
                                     }
 
-                                    return view('filament.components.devices-list', [
-                                        'devices' => $devices,
-                                        'recordId' => $record->id,
-                                    ])->render();
+                                    $recordId = $record->id;
+                                    return view('filament.components.devices-list', compact('devices', 'recordId'))->render();
 
                                 } catch (\Exception $e) {
                                     return "Error: {$e->getMessage()}";

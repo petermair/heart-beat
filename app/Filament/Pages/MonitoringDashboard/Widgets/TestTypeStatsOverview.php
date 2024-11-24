@@ -19,7 +19,7 @@ class TestTypeStatsOverview extends BaseWidget
                 ->selectRaw('(COUNT(CASE WHEN success = 1 THEN 1 END) * 100.0 / COUNT(*)) as success_rate')
                 ->first();
 
-            $successRate = $results?->success_rate ?? 0;
+            $successRate = $results ? $results->success_rate : 0;
             
             $stats[] = Stat::make(
                 ucwords(str_replace('_', ' ', $type)),

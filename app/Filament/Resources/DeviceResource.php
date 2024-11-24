@@ -116,7 +116,7 @@ class DeviceResource extends Resource
                     ),
                 Tables\Columns\TextColumn::make('avg_response_time')
                     ->label('Avg Response (ms)')
-                    ->getStateUsing(fn (Device $record): ?string => 
+                    ->getStateUsing(fn (Device $record): string => 
                         $record->getAverageResponseTime() ? 
                         number_format($record->getAverageResponseTime(), 2) : 
                         'N/A'

@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Device $device
  * @property-read \App\Models\TestScenario $testScenario
+ * @property-read float $success_rate
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult query()
@@ -52,6 +53,10 @@ class TestResult extends Model
         'response_time' => 'float',
     ];
 
+    protected $appends = [
+        'success_rate'
+    ];
+
     public function device(): BelongsTo
     {
         return $this->belongsTo(Device::class);
@@ -60,5 +65,10 @@ class TestResult extends Model
     public function testScenario(): BelongsTo
     {
         return $this->belongsTo(TestScenario::class);
+    }
+
+    public function getSuccessRateAttribute(): float
+    {
+        return $this->success ? 100.0 : 0.0;
     }
 }

@@ -49,6 +49,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereThingsboardServerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereUpdatedAt($value)
+ * @property string|null $device_type
+ * @property array|null $credentials
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereCredentials($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Device whereDeviceType($value)
  * @mixin \Eloquent
  */
 class Device extends Model
@@ -65,12 +69,15 @@ class Device extends Model
         'is_active',
         'last_seen_at',
         'monitoring_enabled',
+        'device_type',
+        'credentials'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'monitoring_enabled' => 'boolean',
         'last_seen_at' => 'datetime',
+        'credentials' => 'encrypted:array'
     ];
 
     public function thingsboardServer(): BelongsTo

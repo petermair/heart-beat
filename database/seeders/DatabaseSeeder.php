@@ -4,9 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Database\Seeders\UserSeeder;
-use Database\Seeders\ServerTypeSeeder;
-use Database\Seeders\CommunicationTypeSeeder;
-use Database\Seeders\NotificationTypeSeeder;
+use Database\Seeders\ServerTypesSeeder;
+use Database\Seeders\CommunicationTypesSeeder;
+use Database\Seeders\NotificationTypesSeeder;
+use Database\Seeders\ServiceFailurePatternsSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -18,9 +19,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
-            ServerTypeSeeder::class,
-            CommunicationTypeSeeder::class,
-            NotificationTypeSeeder::class,
+            ServerTypesSeeder::class,
+            CommunicationTypesSeeder::class,
+            ServiceFailurePatternsSeeder::class,
+            NotificationTypesSeeder::class,
         ]);
     }
 }

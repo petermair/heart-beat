@@ -3,6 +3,8 @@
 namespace App\Services\ChirpStack;
 
 use App\Http\Integrations\ChirpStackHttp\ChirpStackHttp;
+use App\Models\Device;
+use Exception;
 
 class ChirpStackService
 {
@@ -39,7 +41,7 @@ class ChirpStackService
                 ->json();
             
             return isset($response['lastSeenAt']) && strtotime($response['lastSeenAt']) > strtotime('-5 minutes');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -59,7 +61,7 @@ class ChirpStackService
                 ->json();
             
             return isset($response['lastSeenAt']) && strtotime($response['lastSeenAt']) > strtotime('-5 minutes');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -100,7 +102,7 @@ class ChirpStackService
                     ? "Expected {$expectedCount} messages but received {$messagesReceived}"
                     : null,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'messages_received' => 0,
@@ -142,12 +144,81 @@ class ChirpStackService
                     ? 'Message sent but no acknowledgment received'
                     : null,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'ack_received' => false,
                 'error_message' => $e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Wait for a device message
+     * @param Device $device Device to wait for
+     * @param int $timeout Timeout in seconds
+     * @return bool Success status
+     */
+    public function waitForDeviceMessage(Device $device, int $timeout = 30): bool
+    {
+        try {
+            $startTime = time();
+            while (time() - $startTime < $timeout) {
+                $response = $this->client->getDeviceMessages($device->id);
+                if ($response->ok() && !empty($response->json())) {
+                    return true;
+                }
+                sleep(1);
+            }
+            return false;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Simulate a device uplink
+     * @param Device $device Device to simulate
+     * @param array<string, mixed> $data Uplink data
+     * @return bool Success status
+     */
+    public function simulateDeviceUplink(Device $device, array $data): bool
+    {
+        try {
+            $response = $this->client->simulateUplink($device->id, $data);
+            return $response->ok();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Test MQTT connection
+     * @param Device $device Device to test
+     * @return bool Success status
+     */
+    public function testMqttConnection(Device $device): bool
+    {
+        try {
+            $response = $this->client->testMqttConnection($device->id);
+            return $response->ok();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Test HTTP connection
+     * @param Device $device Device to test
+     * @return bool Success status
+     */
+    public function testHttpConnection(Device $device): bool
+    {
+        try {
+            $response = $this->client->testHttpConnection($device->id);
+            return $response->ok();
+        } catch (Exception $e) {
+            return false;
         }
     }
 }

@@ -66,6 +66,28 @@ class MqttMonitor
         return $this->stopped;
     }
 
+    /**
+     * Wait for a message from either ThingsBoard or ChirpStack
+     * @param Device $device Device to wait for
+     * @param int $timeout Timeout in seconds
+     * @return bool Success status
+     */
+    public function waitForMessage(Device $device, int $timeout = 30): bool
+    {
+        try {
+            $startTime = time();
+            while (time() - $startTime < $timeout) {
+                if ($this->thingsboardClient->hasMessage() || $this->chirpstackClient->hasMessage()) {
+                    return true;
+                }
+                sleep(1);
+            }
+            return false;
+        } catch (RuntimeException $e) {
+            return false;
+        }
+    }
+
     private function monitorRxPath(): void
     {
         // Monitor uplink messages from ChirpStack

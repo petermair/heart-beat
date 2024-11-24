@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\NotificationSettingResource\Pages;
 use App\Models\NotificationSetting;
+use App\Models\NotificationType;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;

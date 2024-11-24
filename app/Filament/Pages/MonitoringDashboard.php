@@ -8,13 +8,16 @@ use App\Models\TestResult;
 use Filament\Pages\Page;
 use Filament\Support\Enums\IconPosition;
 use Filament\Forms\Components\Grid;
-use Filament\Widgets\StatsOverviewWidget\Stat;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Carbon\Carbon;
+use App\Filament\Widgets\SystemStatsOverview;
+use App\Filament\Widgets\TestTypeStatsOverview;
+use App\Filament\Widgets\DeviceStatsOverview;
+use App\Filament\Widgets\FlowStatsOverview;
+use App\Filament\Widgets\ResponseTimeChart;
 
 class MonitoringDashboard extends Page implements HasTable
 {
@@ -27,12 +30,14 @@ class MonitoringDashboard extends Page implements HasTable
     protected static ?int $navigationSort = 1;
     protected ?string $heading = 'System Monitoring Dashboard';
 
-    protected function getHeaderWidgets(): array
+    protected function getWidgets(): array
     {
         return [
-            MonitoringDashboard\Widgets\SystemStatsOverview::class,
-            MonitoringDashboard\Widgets\TestTypeStatsOverview::class,
-            MonitoringDashboard\Widgets\DeviceStatsOverview::class,
+            'system-stats' => \App\Filament\Widgets\SystemStatsOverview::class,
+            'test-type-stats' => \App\Filament\Widgets\TestTypeStatsOverview::class,
+            'device-stats' => \App\Filament\Widgets\DeviceStatsOverview::class,
+            'flow-stats' => \App\Filament\Widgets\FlowStatsOverview::class,
+            'response-time' => \App\Filament\Widgets\ResponseTimeChart::class,
         ];
     }
 
@@ -41,32 +46,37 @@ class MonitoringDashboard extends Page implements HasTable
         return $table
             ->query(
                 TestResult::query()
-                    ->where('success', false)
+                    ->where('status', 'FAILURE')
                     ->where('created_at', '>=', now()->subDay())
                     ->latest()
             )
             ->columns([
                 TextColumn::make('device.name')
                     ->label('Device')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('test_type')
-                    ->label('Test Type')
-                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
+                TextColumn::make('flow_type')
+                    ->label('Flow Type')
+                    ->searchable(),
+                TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'SUCCESS' => 'success',
+                        'FAILURE' => 'danger',
+                        default => 'warning',
+                    }),
+                TextColumn::make('execution_time_ms')
+                    ->label('Response Time (ms)')
+                    ->numeric(),
                 TextColumn::make('error_message')
                     ->label('Error Message')
                     ->wrap()
-                    ->searchable(),
+                    ->limit(50),
                 TextColumn::make('created_at')
                     ->label('Time')
                     ->dateTime()
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
-            ->paginated([10, 25, 50])
-            ->heading('Recent Failures (Last 24 Hours)')
-            ->description('List of test failures in the last 24 hours');
+            ->paginated([10, 25, 50, 100]);
     }
 }

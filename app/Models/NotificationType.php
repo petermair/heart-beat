@@ -7,6 +7,34 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\TestScenario;
 use App\Models\NotificationSetting;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property string $name
+ * @property string $display_name
+ * @property string|null $description
+ * @property array|null $configuration_schema
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, NotificationSetting> $notificationSettings
+ * @property-read int|null $notification_settings_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, TestScenario> $testScenarios
+ * @property-read int|null $test_scenarios_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereConfigurationSchema($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereDisplayName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationType whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class NotificationType extends Model
 {
     protected $fillable = [

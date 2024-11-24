@@ -9,11 +9,8 @@
         "php": "^8.2",
         "filament/filament": "^3.2",
         "invaders-xx/filament-jsoneditor": "^4.2",
-        "jeffgreco13/filament-breezy": "^2.4",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
-        "mohamedsabil83/filament-forms-tinyeditor": "^2.3",
-        "novadaemon/filament-pretty-json": "^2.3",
         "php-mqtt/client": "^2.1",
         "saloonphp/laravel-plugin": "^3.5",
         "saloonphp/pagination-plugin": "^2.0",
@@ -73,7 +70,6 @@
             "dont-discover": [
                 "barryvdh/laravel-ide-helper"
             ]
-            
         }
     },
     "config": {

@@ -104,6 +104,7 @@ class TestScenarioResource extends Resource
                         'HEALTHY' => 'success',
                         'WARNING' => 'warning',
                         'CRITICAL' => 'danger',
+                        default => 'gray'
                     }),
                 Tables\Columns\TextColumn::make('thingsboard_success_rate_1h')
                     ->label('TB 1h')
@@ -121,6 +122,7 @@ class TestScenarioResource extends Resource
                         'HEALTHY' => 'success',
                         'WARNING' => 'warning',
                         'CRITICAL' => 'danger',
+                        default => 'gray'
                     }),
                 Tables\Columns\TextColumn::make('chirpstack_success_rate_1h')
                     ->label('CS 1h')
@@ -138,6 +140,7 @@ class TestScenarioResource extends Resource
                         'HEALTHY' => 'success',
                         'WARNING' => 'warning',
                         'CRITICAL' => 'danger',
+                        default => 'gray'
                     }),
                 Tables\Columns\TextColumn::make('mqtt_success_rate_1h')
                     ->label('MQTT 1h')
@@ -181,6 +184,10 @@ class TestScenarioResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('monitor')
+                    ->icon('heroicon-m-chart-bar')
+                    ->color('info')
+                    ->url(fn (TestScenario $record): string => static::getUrl('monitor', ['record' => $record])),
                 Tables\Actions\Action::make('run')
                     ->icon('heroicon-m-play')
                     ->color('success')
@@ -220,6 +227,7 @@ class TestScenarioResource extends Resource
             'index' => Pages\ListTestScenarios::route('/'),
             'create' => Pages\CreateTestScenario::route('/create'),
             'edit' => Pages\EditTestScenario::route('/{record}/edit'),
+            'monitor' => Pages\MonitorTestScenario::route('/{record}/monitor'),
         ];
     }
 }

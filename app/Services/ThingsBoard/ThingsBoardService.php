@@ -4,6 +4,8 @@ namespace App\Services\ThingsBoard;
 
 use App\Http\Integrations\ThingsBoardHttp\ThingsBoardHttp;
 use App\Http\Integrations\ThingsBoardHttp\Requests\LoginHttpRequest;
+use App\Models\Device;
+use Exception;
 
 /**
  * ThingsBoard service class
@@ -238,6 +240,105 @@ class ThingsBoardService
                 'response' => null,
                 'error_message' => $e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Send a command to a device
+     *
+     * @param Device $device Device to send command to
+     * @param array<string, mixed> $command Command data
+     * @return bool Success status
+     */
+    public function sendDeviceCommand(Device $device, array $command): bool
+    {
+        try {
+            $this->ensureAuthenticated();
+            $response = $this->client->sendDeviceCommand($device->id, $command);
+            return $response->ok();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Wait for telemetry from a device
+     *
+     * @param Device $device Device to wait for
+     * @param int $timeout Timeout in seconds
+     * @return bool Success status
+     */
+    public function waitForTelemetry(Device $device, int $timeout = 30): bool
+    {
+        try {
+            $this->ensureAuthenticated();
+            $startTime = time();
+            while (time() - $startTime < $timeout) {
+                $telemetry = $this->client->getLatestTelemetry($device->id);
+                if ($telemetry->json() && !empty($telemetry->json())) {
+                    return true;
+                }
+                sleep(1);
+            }
+            return false;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Test MQTT connection
+     *
+     * @param Device $device Device to test
+     * @return bool Success status
+     */
+    public function testMqttConnection(Device $device): bool
+    {
+        try {
+            $this->ensureAuthenticated();
+            $response = $this->client->testMqttConnection($device->id);
+            return $response->ok();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Test HTTP connection
+     *
+     * @param Device $device Device to test
+     * @return bool Success status
+     */
+    public function testHttpConnection(Device $device): bool
+    {
+        try {
+            $this->ensureAuthenticated();
+            $response = $this->client->testHttpConnection($device->id);
+            return $response->ok();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Ensure the client is authenticated
+     *
+     * @throws Exception If authentication fails
+     */
+    protected function ensureAuthenticated(): void
+    {
+        if ($this->token === null) {
+            $response = $this->client->send(new LoginHttpRequest([
+                'username' => $this->username,
+                'password' => $this->password,
+            ]));
+
+            if (!$response->ok()) {
+                throw new Exception('Failed to authenticate with ThingsBoard');
+            }
+
+            $this->token = $response->json('token');
+            $this->client->authenticate($this->token);
         }
     }
 }

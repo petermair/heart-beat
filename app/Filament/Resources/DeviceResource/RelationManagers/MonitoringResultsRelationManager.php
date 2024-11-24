@@ -16,9 +16,6 @@ class MonitoringResultsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\IconColumn::make('success')
-                    ->boolean()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('test_type')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -50,6 +47,19 @@ class MonitoringResultsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
+                Tables\Columns\IconColumn::make('status')
+                    ->label('Status')
+                    ->options([
+                        'SUCCESS' => 'success',
+                        'FAILURE' => 'danger',
+                        'TIMEOUT' => 'warning',
+                    ])
+                    ->colors([
+                        'success' => 'success',
+                        'danger' => 'danger',
+                        'warning' => 'warning',
+                    ])
+                    ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -59,8 +69,13 @@ class MonitoringResultsRelationManager extends RelationManager
                         'manual' => 'Manual',
                         'api' => 'API',
                     ]),
-                Tables\Filters\TernaryFilter::make('success')
-                    ->label('Status'),
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'SUCCESS' => 'Success',
+                        'FAILURE' => 'Failure',
+                        'TIMEOUT' => 'Timeout',
+                    ]),
             ])
             ->actions([
                 // No actions needed for monitoring results

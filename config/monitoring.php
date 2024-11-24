@@ -43,6 +43,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Logging Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for monitoring-specific logging, including channels for
+    | different types of logs and external services like Sentry.
+    |
+    */
+    'logging' => [
+        'channel' => env('MONITORING_LOG_CHANNEL', 'monitoring'),
+        'sentry' => [
+            'enabled' => env('MONITORING_SENTRY_ENABLED', false),
+            'dsn' => env('MONITORING_SENTRY_DSN'),
+            'level' => env('MONITORING_SENTRY_LEVEL', 'error'),
+            'traces_sample_rate' => env('MONITORING_SENTRY_TRACES_SAMPLE_RATE', 1.0),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Service-Specific Settings
     |--------------------------------------------------------------------------
     |

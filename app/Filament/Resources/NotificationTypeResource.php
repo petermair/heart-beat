@@ -9,6 +9,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Invaders\JsonEditor\JsonEditor;
+use InvadersXX\FilamentJsoneditor\Forms\JSONEditor as FormsJSONEditor;
 
 class NotificationTypeResource extends Resource
 {
@@ -51,7 +53,7 @@ class NotificationTypeResource extends Resource
                 Forms\Components\Section::make('Configuration Schema')
                     ->description('Define the JSON schema for configuration validation')
                     ->schema([
-                        Forms\Components\JsonEditor::make('configuration_schema')
+                        FormsJSONEditor::make('configuration_schema')
                             ->default([
                                 'url' => [
                                     'type' => 'url',

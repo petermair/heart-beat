@@ -19,9 +19,21 @@ class DeviceResource extends Resource
 {
     protected static ?string $model = Device::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-device-phone-mobile';
+    protected static ?string $navigationIcon = 'heroicon-o-cpu-chip';
 
     protected static ?string $navigationGroup = 'Monitoring';
+
+    protected static ?int $navigationSort = 2;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::count() > 0 ? 'success' : 'gray';
+    }
 
     public static function form(Form $form): Form
     {

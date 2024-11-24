@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TestScenarioResource\Pages;
-use App\Jobs\ExecuteTestScenarioJob;
 use App\Models\TestScenario;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -12,14 +11,27 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Notifications\Notification;
+use App\Jobs\ExecuteTestScenarioJob;
 
 class TestScenarioResource extends Resource
 {
     protected static ?string $model = TestScenario::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static ?string $navigationIcon = 'heroicon-o-beaker';
+    
     protected static ?string $navigationGroup = 'Monitoring';
-    protected static ?int $navigationSort = 20;
+
+    protected static ?int $navigationSort = 3;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::count() > 0 ? 'success' : 'gray';
+    }
 
     public static function form(Form $form): Form
     {
@@ -31,63 +43,41 @@ class TestScenarioResource extends Resource
                             ->required()
                             ->maxLength(255),
                         Forms\Components\Textarea::make('description')
-                            ->maxLength(65535)
-                            ->columnSpanFull(),
-                        Forms\Components\Select::make('device_id')
-                            ->relationship('device', 'name')
+                            ->maxLength(65535),
+                        Forms\Components\Select::make('mqtt_device_id')
+                            ->relationship('mqttDevice', 'name')
                             ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('test_type')
-                            ->options(fn () => (new TestScenario())->getTestTypes())
+                            ->label('MQTT Device'),
+                        Forms\Components\Select::make('http_device_id')
+                            ->relationship('httpDevice', 'name')
                             ->required()
-                            ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                $scenario = new TestScenario(['test_type' => $state]);
-                                $set('test_configuration', $scenario->getDefaultConfiguration());
-                            }),
-                    ]),
-
-                Forms\Components\Section::make('Test Configuration')
-                    ->schema([
-                        Forms\Components\KeyValue::make('test_configuration')
-                            ->keyLabel('Parameter')
-                            ->valueLabel('Value')
-                            ->reorderable()
-                            ->addable()
-                            ->deletable(),
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\TextInput::make('interval_seconds')
-                                    ->label('Interval (seconds)')
-                                    ->numeric()
-                                    ->default(300)
-                                    ->required(),
-                                Forms\Components\TextInput::make('timeout_seconds')
-                                    ->label('Timeout (seconds)')
-                                    ->numeric()
-                                    ->default(30)
-                                    ->required(),
-                                Forms\Components\TextInput::make('max_retries')
-                                    ->numeric()
-                                    ->default(3)
-                                    ->required(),
-                            ]),
-                    ]),
-
-                Forms\Components\Section::make('Notification Settings')
-                    ->schema([
-                        Forms\Components\KeyValue::make('notification_settings')
-                            ->keyLabel('Setting')
-                            ->valueLabel('Value')
-                            ->reorderable()
-                            ->addable()
-                            ->deletable(),
+                            ->label('HTTP Device'),
                         Forms\Components\Toggle::make('is_active')
-                            ->label('Active')
-                            ->default(true)
-                            ->required(),
-                    ]),
+                            ->required()
+                            ->default(true),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Test Schedule')
+                    ->schema([
+                        Forms\Components\TextInput::make('interval_seconds')
+                            ->label('Test Interval (seconds)')
+                            ->numeric()
+                            ->default(300)
+                            ->required()
+                            ->helperText('How often to run the tests'),
+                        Forms\Components\TextInput::make('timeout_seconds')
+                            ->label('Timeout (seconds)')
+                            ->numeric()
+                            ->default(30)
+                            ->required()
+                            ->helperText('Maximum time to wait for response'),
+                        Forms\Components\TextInput::make('max_retries')
+                            ->label('Max Retries')
+                            ->numeric()
+                            ->default(3)
+                            ->required()
+                            ->helperText('Number of retry attempts'),
+                    ])->columns(3),
             ]);
     }
 
@@ -97,29 +87,97 @@ class TestScenarioResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('device.name')
+                Tables\Columns\TextColumn::make('mqttDevice.name')
+                    ->label('MQTT Device')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('test_type')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('interval_seconds')
-                    ->label('Interval')
-                    ->formatStateUsing(fn (int $state) => "{$state}s")
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('httpDevice.name')
+                    ->label('HTTP Device')
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
-                    ->boolean()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable(),
+                    ->boolean(),
+                // ThingsBoard Status
+                Tables\Columns\TextColumn::make('thingsboard_status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'HEALTHY' => 'success',
+                        'WARNING' => 'warning',
+                        'CRITICAL' => 'danger',
+                    }),
+                Tables\Columns\TextColumn::make('thingsboard_success_rate_1h')
+                    ->label('TB 1h')
+                    ->numeric(2)
+                    ->suffix('%')
+                    ->color(fn ($state): string => match (true) {
+                        $state >= 90 => 'success',
+                        $state >= 75 => 'warning',
+                        default => 'danger'
+                    }),
+                // ChirpStack Status
+                Tables\Columns\TextColumn::make('chirpstack_status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'HEALTHY' => 'success',
+                        'WARNING' => 'warning',
+                        'CRITICAL' => 'danger',
+                    }),
+                Tables\Columns\TextColumn::make('chirpstack_success_rate_1h')
+                    ->label('CS 1h')
+                    ->numeric(2)
+                    ->suffix('%')
+                    ->color(fn ($state): string => match (true) {
+                        $state >= 90 => 'success',
+                        $state >= 75 => 'warning',
+                        default => 'danger'
+                    }),
+                // MQTT Status
+                Tables\Columns\TextColumn::make('mqtt_status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'HEALTHY' => 'success',
+                        'WARNING' => 'warning',
+                        'CRITICAL' => 'danger',
+                    }),
+                Tables\Columns\TextColumn::make('mqtt_success_rate_1h')
+                    ->label('MQTT 1h')
+                    ->numeric(2)
+                    ->suffix('%')
+                    ->color(fn ($state): string => match (true) {
+                        $state >= 90 => 'success',
+                        $state >= 75 => 'warning',
+                        default => 'danger'
+                    }),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('test_type')
-                    ->options(fn () => (new TestScenario())->getTestTypes()),
-                Tables\Filters\SelectFilter::make('device')
-                    ->relationship('device', 'name'),
                 Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Active'),
+                    ->label('Active Status')
+                    ->placeholder('All')
+                    ->trueLabel('Active Only')
+                    ->falseLabel('Inactive Only'),
+                Tables\Filters\SelectFilter::make('mqtt_device')
+                    ->relationship('mqttDevice', 'name'),
+                Tables\Filters\SelectFilter::make('http_device')
+                    ->relationship('httpDevice', 'name'),
+                // Service Status Filters
+                Tables\Filters\SelectFilter::make('thingsboard_status')
+                    ->options([
+                        'HEALTHY' => 'Healthy',
+                        'WARNING' => 'Warning',
+                        'CRITICAL' => 'Critical',
+                    ]),
+                Tables\Filters\SelectFilter::make('chirpstack_status')
+                    ->options([
+                        'HEALTHY' => 'Healthy',
+                        'WARNING' => 'Warning',
+                        'CRITICAL' => 'Critical',
+                    ]),
+                Tables\Filters\SelectFilter::make('mqtt_status')
+                    ->options([
+                        'HEALTHY' => 'Healthy',
+                        'WARNING' => 'Warning',
+                        'CRITICAL' => 'Critical',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -141,22 +199,19 @@ class TestScenarioResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\BulkAction::make('activate')
+                        ->icon('heroicon-m-check-circle')
+                        ->color('success')
                         ->action(fn (Builder $query) => $query->update(['is_active' => true]))
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                     Tables\Actions\BulkAction::make('deactivate')
+                        ->icon('heroicon-m-x-circle')
+                        ->color('danger')
                         ->action(fn (Builder $query) => $query->update(['is_active' => false]))
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                 ]),
             ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
     }
 
     public static function getPages(): array

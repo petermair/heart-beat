@@ -44,6 +44,16 @@
 - [x] ChirpStack HTTP Integration
   - [x] Base connector with authentication
   - [x] Device queue request for downlinks
+  - [x] Device messages request
+  - [x] Device status request
+  - [x] Device info request
+- [x] ThingsBoard HTTP Integration
+  - [x] Base connector with authentication
+  - [x] Device telemetry request
+  - [x] Device RPC request
+  - [x] Device status request
+  - [x] Device list request
+  - [x] Device create request
 
 ### Data Transfer Objects
 - [x] ChirpStack Message DTO
@@ -59,6 +69,11 @@
     - [x] Add custom context for MQTT/HTTP errors
     - [x] Configure performance monitoring
     - [x] Set up error notifications
+- [x] Code Quality
+  - [x] PHPStan
+    - [x] Configure static analysis
+    - [x] Set maximum level
+    - [x] Add custom rules
 
 ### Administration Dashboard
 - [x] Filament Setup
@@ -84,53 +99,53 @@
     - [x] Manual testing through UI
     - [x] Response time tracking
     - [x] Success rate calculation
+    - [x] Metadata support
+    - [x] Test scenario integration
   - [x] Monitoring Results
     - [x] Detailed monitoring history
     - [x] Success/failure status tracking
     - [x] Response times for both platforms
     - [x] Error message logging
+    - [x] Additional metadata storage
+- [x] Instance Management
+  - [x] Server Management
+    - [x] Advanced ThingsBoard features
+      - [x] Device management
+      - [x] Credentials management
+    - [x] Advanced ChirpStack features
+      - [x] Application management
+      - [x] Device management
+      - [x] API key management
+- [x] Test Configuration
+  - [x] Test Scenario Resource
+    - [x] Configure test types
+    - [x] Set intervals and timeouts
+    - [x] Manage retries
+    - [x] Set up notifications
+  - [x] Instance Pairing
+    - [x] Link ThingsBoard and ChirpStack instances
+    - [x] Configure routing paths
+    - [x] Set up test devices
+- [x] Monitoring Dashboard
+  - [x] System Overview Page
+    - [x] Health status summary
+    - [x] Active tests count
+    - [x] Error rates
+    - [x] Performance metrics
+  - [x] Instance Details Page
+    - [x] Instance health status
+    - [x] Test history
+    - [x] Response times
+    - [x] Error logs
+  - [x] Test Results Page
+    - [x] Test execution history
+    - [x] Success/failure rates
+    - [x] Response time trends
+    - [x] Error details
 
 ## Pending Tasks 
 
 ### Administration Dashboard
-- [ ] Instance Management
-  - [ ] Server Management
-    - [ ] Advanced ThingsBoard features
-      - [ ] Device management
-      - [ ] Credentials management
-    - [ ] Advanced ChirpStack features
-      - [ ] Application management
-      - [ ] Device management
-      - [ ] API key management
-
-- [ ] Test Configuration
-  - [ ] Test Scenario Resource
-    - [ ] Configure test types
-    - [ ] Set intervals and timeouts
-    - [ ] Manage retries
-    - [ ] Set up notifications
-  - [ ] Instance Pairing
-    - [ ] Link ThingsBoard and ChirpStack instances
-    - [ ] Configure routing paths
-    - [ ] Set up test devices
-
-- [ ] Monitoring Dashboard
-  - [ ] System Overview Page
-    - [ ] Health status summary
-    - [ ] Active tests count
-    - [ ] Error rates
-    - [ ] Performance metrics
-  - [ ] Instance Details Page
-    - [ ] Instance health status
-    - [ ] Test history
-    - [ ] Response times
-    - [ ] Error logs
-  - [ ] Test Results Page
-    - [ ] Test execution history
-    - [ ] Success/failure rates
-    - [ ] Response time trends
-    - [ ] Error details
-
 - [ ] Notification System
   - [ ] Alert Configuration
     - [ ] Define alert conditions
@@ -164,20 +179,122 @@
   - [ ] Rule chain management
 
 ### Monitoring Implementation
-- [ ] Test Orchestration
-  - [ ] Test scheduler implementation
-  - [ ] Test execution engine
-  - [ ] Retry mechanism
-  - [ ] Timeout handling
+- [ ] Test Flows Implementation
+  - [ ] Main Flows
+    - [ ] Flow 1: TB → MQTT → LoraTX → MQTT → CS
+    - [ ] Flow 2: CS → MQTT → LoraRX → MQTT → TB
+    - [ ] Flow 3: Two-way combination of Flow 1 & 2
+  - [ ] Direct Test Flows
+    - [ ] Flow 4: CS → MQTT → TB direct test
+    - [ ] Flow 5: TB → MQTT → CS direct test
+  - [ ] Health Check Flows
+    - [ ] Flow 6: TB MQTT health check
+    - [ ] Flow 7: CS MQTT health check
+    - [ ] Flow 8: TB HTTP health check
+    - [ ] Flow 9: CS HTTP health check
+
+- [ ] Service Status Monitoring
+  - [ ] Critical Alert System (10min downtime)
+    - [ ] Service status tracking
+    - [ ] Immediate notifications
+    - [ ] Downtime duration tracking
+  - [ ] Warning Alert System (60min success rate)
+    - [ ] Success rate calculation
+    - [ ] Hourly checks
+    - [ ] Alert threshold management (90%)
+  - [ ] Service Health Dashboard
+    - [ ] Real-time status indicators
+    - [ ] Success rate display
+    - [ ] Last successful message tracking
+
 - [ ] Status Aggregation
-  - [ ] Instance status aggregator
-  - [ ] Service pair status aggregator
-  - [ ] System-wide status aggregator
-- [ ] Health Checks
-  - [ ] MQTT vs HTTP comparison tests
-  - [ ] Direct vs Routing path tests
-  - [ ] Response time monitoring
-  - [ ] Service degradation detection
+  - [ ] Per-Service Status
+    - [ ] ThingsBoard status aggregation
+    - [ ] ChirpStack status aggregation
+    - [ ] MQTT Broker status aggregation
+    - [ ] LoraTX status aggregation
+    - [ ] LoraRX status aggregation
+  - [ ] Flow Status
+    - [ ] Main flow status tracking
+    - [ ] Direct test status tracking
+    - [ ] Health check status tracking
+
+- [ ] Visualization
+  - [ ] Flow Diagrams
+    - [ ] Main flows visualization
+    - [ ] Status indicators
+    - [ ] Success rates display
+  - [ ] Service Status
+    - [ ] Color-coded status indicators
+    - [ ] Downtime/success rate display
+    - [ ] Historical status view
+
+- [ ] Service Detail Pages
+  - [ ] ThingsBoard Details
+    - [ ] Basic Information
+      - [ ] Current status indicator
+      - [ ] Uptime percentage (24h)
+      - [ ] Last successful message
+      - [ ] Current success rate
+    - [ ] Active Flows Display
+      - [ ] Flow 1: TB → MQTT → LoraTX → MQTT → CS
+      - [ ] Flow 3: Two-way route
+      - [ ] Flow 4: Direct test (CS → MQTT → TB)
+      - [ ] Flow 5: Direct test (TB → MQTT → CS)
+      - [ ] Flow 6: MQTT health
+      - [ ] Flow 8: HTTP health
+    - [ ] Statistics Section
+      - [ ] Time range selector (1h, 24h, 7d)
+      - [ ] Message counts (sent/received)
+      - [ ] Success rates over time
+      - [ ] Failure counts
+      - [ ] Average response times
+    - [ ] Recent Issues
+      - [ ] Last 5 failures list
+      - [ ] Downtime periods
+      - [ ] Error messages
+
+  - [ ] ChirpStack Details
+    - [ ] Basic Information
+      - [ ] Status and uptime
+      - [ ] Last message info
+      - [ ] Success rate
+    - [ ] Active Flows Display
+      - [ ] Flows 1, 2, 3, 4, 5, 7, 9
+    - [ ] Statistics Section
+      - [ ] Time-based statistics
+      - [ ] Message metrics
+    - [ ] Recent Issues
+      - [ ] Failure history
+      - [ ] Error tracking
+
+  - [ ] MQTT Broker Details
+    - [ ] Basic Information
+      - [ ] Broker status
+      - [ ] Connection metrics
+    - [ ] Active Flows Display
+      - [ ] All MQTT flows (1-7)
+    - [ ] Statistics Section
+      - [ ] Messages per topic
+      - [ ] Connected clients
+      - [ ] Traffic metrics
+    - [ ] Recent Issues
+      - [ ] Connection failures
+      - [ ] Error logs
+
+  - [ ] LoraTX/LoraRX Details
+    - [ ] Basic Information
+      - [ ] Service status
+      - [ ] Operating metrics
+    - [ ] Active Flows Display
+      - [ ] LoraTX: Flow 1
+      - [ ] LoraRX: Flows 2, 3
+    - [ ] Statistics Section
+      - [ ] Message processing stats
+      - [ ] Performance metrics
+    - [ ] Recent Issues
+      - [ ] Processing failures
+      - [ ] Error tracking
 
 ### Development Tools & Quality Assurance
 - [ ] Testing Framework
@@ -195,10 +312,6 @@
     - [ ] Set up pre-commit hooks
     - [ ] Add to CI pipeline
     - [ ] Create custom ruleset
-  - [ ] PHPStan
-    - [ ] Configure static analysis
-    - [ ] Set maximum level
-    - [ ] Add custom rules
 
 - [ ] Development Tools
   - [ ] Laravel Telescope

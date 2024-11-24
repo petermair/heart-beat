@@ -3,94 +3,61 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * 
- *
- * @property int $id
- * @property string $notifiable_type
- * @property int $notifiable_id
- * @property string $channel
- * @property array $configuration
- * @property array|null $conditions
- * @property bool $is_active
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read Model|\Eloquent $notifiable
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereChannel($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereConditions($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereConfiguration($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereIsActive($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereNotifiableId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereNotifiableType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class NotificationSetting extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
-        'channel',
+        'name',
+        'description',
+        'notification_type_id',
         'configuration',
-        'conditions',
         'is_active',
     ];
 
     protected $casts = [
         'configuration' => 'array',
-        'conditions' => 'array',
         'is_active' => 'boolean',
     ];
 
-    public function notifiable(): MorphTo
+    // Relationships
+    public function notificationType(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(NotificationType::class);
     }
 
-    public function getAvailableChannels(): array
+    public function testScenarios()
     {
-        return [
-            'email' => 'Email',
-            'slack' => 'Slack',
-            'webhook' => 'Webhook',
-        ];
+        return $this->belongsToMany(TestScenario::class, 'test_scenario_notification_settings')
+            ->withPivot(['last_notification_at', 'last_result_id'])
+            ->withTimestamps();
     }
 
-    public function getDefaultConfiguration(): array
+    public function lastResult(): BelongsTo
     {
-        return match($this->channel) {
-            'email' => [
-                'recipients' => [],
-                'cc' => [],
-                'bcc' => [],
-            ],
-            'slack' => [
-                'webhook_url' => '',
-                'channel' => '',
-                'username' => 'Heart-Beat Monitor',
-            ],
-            'webhook' => [
-                'url' => '',
-                'method' => 'POST',
-                'headers' => [],
-            ],
-            default => [],
-        };
+        return $this->belongsTo(DeviceMonitoringResult::class, 'last_result_id');
     }
 
-    public function getDefaultConditions(): array
+    // Helper methods
+    public function validateConfiguration(): bool
     {
-        return [
-            'on_failure' => true,
-            'on_recovery' => true,
-            'min_failures' => 1,
-            'failure_window' => 3600, // 1 hour
-            'throttle_minutes' => 15,
-        ];
+        if (!$this->notificationType) {
+            return false;
+        }
+
+        return $this->notificationType->validateConfiguration($this->configuration ?? []);
+    }
+
+    public function getConfigurationAttribute($value)
+    {
+        return json_decode($value, true) ?? [];
+    }
+
+    public function setConfigurationAttribute($value)
+    {
+        $this->attributes['configuration'] = json_encode($value);
     }
 }

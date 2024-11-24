@@ -2,73 +2,77 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\TestScenario;
 
-/**
- * 
- *
- * @property int $id
- * @property int $device_id
- * @property int $test_scenario_id
- * @property string $test_type
- * @property bool $success
- * @property string|null $error_message
- * @property float|null $response_time
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Device $device
- * @property-read \App\Models\TestScenario $testScenario
- * @property-read float $success_rate
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereDeviceId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereErrorMessage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereResponseTime($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereSuccess($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereTestScenarioId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereTestType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class TestResult extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'device_id',
         'test_scenario_id',
-        'test_type',
-        'success',
+        'status',
+        'response_time_ms',
         'error_message',
-        'response_time',
+        'request_data',
+        'response_data',
+        'metadata',
     ];
 
     protected $casts = [
-        'success' => 'boolean',
-        'response_time' => 'float',
+        'request_data' => 'array',
+        'response_data' => 'array',
+        'metadata' => 'array',
+        'response_time_ms' => 'integer',
     ];
 
-    protected $appends = [
-        'success_rate'
-    ];
+    // Status constants
+    public const STATUS_SUCCESS = 'success';
+    public const STATUS_FAILURE = 'failure';
+    public const STATUS_TIMEOUT = 'timeout';
+    public const STATUS_ERROR = 'error';
 
-    public function device(): BelongsTo
-    {
-        return $this->belongsTo(Device::class);
-    }
-
+    // Relationships
     public function testScenario(): BelongsTo
     {
         return $this->belongsTo(TestScenario::class);
     }
 
-    public function getSuccessRateAttribute(): float
+    // Helper methods
+    public function isSuccess(): bool
     {
-        return $this->success ? 100.0 : 0.0;
+        return $this->status === self::STATUS_SUCCESS;
+    }
+
+    public function isFailure(): bool
+    {
+        return $this->status === self::STATUS_FAILURE;
+    }
+
+    public function isTimeout(): bool
+    {
+        return $this->status === self::STATUS_TIMEOUT;
+    }
+
+    public function isError(): bool
+    {
+        return $this->status === self::STATUS_ERROR;
+    }
+
+    public function getStatusList(): array
+    {
+        return [
+            self::STATUS_SUCCESS => 'Success',
+            self::STATUS_FAILURE => 'Failure',
+            self::STATUS_TIMEOUT => 'Timeout',
+            self::STATUS_ERROR => 'Error',
+        ];
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($testResult) {
+            // Update the test scenario's success rates when a new result is created
+            $testResult->testScenario->updateSuccessRate($testResult->isSuccess());
+        });
     }
 }

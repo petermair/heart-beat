@@ -10,12 +10,13 @@ return new class extends Migration
     {
         Schema::create('notification_settings', function (Blueprint $table) {
             $table->id();
-            $table->morphs('notifiable'); // For devices, test scenarios, etc.
-            $table->string('channel'); // email, slack, webhook
-            $table->json('configuration'); // Channel-specific settings
-            $table->json('conditions')->nullable(); // When to send notifications
+            $table->string('name');
+            $table->string('description')->nullable();
+            $table->foreignId('notification_type_id')->constrained()->cascadeOnDelete();
+            $table->json('configuration');  // Specific configuration based on notification_type (email addresses, webhook URLs, etc.)
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

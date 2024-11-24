@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\ServerTypeSeeder;
 use Database\Seeders\CommunicationTypeSeeder;
+use Database\Seeders\NotificationTypeSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -19,6 +20,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ServerTypeSeeder::class,
             CommunicationTypeSeeder::class,
+            NotificationTypeSeeder::class,
         ]);
     }
 }

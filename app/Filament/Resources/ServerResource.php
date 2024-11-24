@@ -27,6 +27,16 @@ class ServerResource extends Resource
     protected static ?string $navigationGroup = 'Monitoring';
     protected static ?int $navigationSort = 1;
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::count() > 0 ? 'success' : 'gray';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -271,11 +281,6 @@ class ServerResource extends Resource
             'create' => Pages\CreateServer::route('/create'),
             'edit' => Pages\EditServer::route('/{record}/edit'),
         ];
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::count();
     }
 
     protected static function resetDynamicFields($serverTypeId, callable $set): void

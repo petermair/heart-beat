@@ -8,8 +8,12 @@
     "require": {
         "php": "^8.2",
         "filament/filament": "^3.2",
+        "invaders-xx/filament-jsoneditor": "^4.2",
+        "jeffgreco13/filament-breezy": "^2.4",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
+        "mohamedsabil83/filament-forms-tinyeditor": "^2.3",
+        "novadaemon/filament-pretty-json": "^2.3",
         "php-mqtt/client": "^2.1",
         "saloonphp/laravel-plugin": "^3.5",
         "saloonphp/pagination-plugin": "^2.0",
@@ -25,10 +29,8 @@
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.1",
-        "nunomaduro/larastan": "^3.0",
         "pestphp/pest": "^3.5",
         "pestphp/pest-plugin-laravel": "^3.0",
-        "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0.1"
     },
     "autoload": {

@@ -3,163 +3,135 @@
 namespace App\Services\Notifications;
 
 use App\Models\DeviceMonitoringResult;
-use App\Models\NotificationSetting;
+use App\Models\NotificationType;
+use App\Models\TestScenarioNotification;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class NotificationService
 {
-    public function sendNotification(NotificationSetting $setting, DeviceMonitoringResult $result): void
+    public function sendNotification(TestScenarioNotification $notification, DeviceMonitoringResult $result): void
     {
-        if (!$this->shouldSendNotification($setting, $result)) {
+        if (!$this->shouldSendNotification($notification, $result)) {
             return;
         }
 
-        try {
-            match($setting->channel) {
-                'email' => $this->sendEmailNotification($setting, $result),
-                'slack' => $this->sendSlackNotification($setting, $result),
-                'webhook' => $this->sendWebhookNotification($setting, $result),
-                default => throw new \InvalidArgumentException("Unknown notification channel: {$setting->channel}"),
-            };
+        $notificationType = $notification->notificationType;
+        $testScenario = $notification->testScenario;
 
-            // Update last notification timestamp
-            $this->updateNotificationTimestamp($setting, $result);
-        } catch (\Exception $e) {
-            Log::error("Failed to send notification", [
-                'channel' => $setting->channel,
-                'error' => $e->getMessage(),
-                'setting_id' => $setting->id,
-                'result_id' => $result->id,
-            ]);
+        switch ($notificationType->type) {
+            case 'email':
+                $this->sendEmailNotification($notificationType, $result);
+                break;
+            case 'slack':
+                $this->sendSlackNotification($notificationType, $result);
+                break;
+            case 'webhook':
+                $this->sendWebhookNotification($notificationType, $result);
+                break;
         }
+
+        $this->updateNotificationTimestamp($notification, $result);
     }
 
-    private function shouldSendNotification(NotificationSetting $setting, DeviceMonitoringResult $result): bool
+    private function shouldSendNotification(TestScenarioNotification $notification, DeviceMonitoringResult $result): bool
     {
-        if (!$setting->is_active) {
+        if (!$notification->notificationType->is_active) {
             return false;
         }
 
-        $conditions = $setting->conditions ?? $setting->getDefaultConditions();
-        $cacheKey = "notification:{$setting->id}:last_sent";
-        $lastSent = Cache::get($cacheKey);
-
-        // Check throttling
-        if ($lastSent && now()->diffInMinutes($lastSent) < ($conditions['throttle_minutes'] ?? 15)) {
-            return false;
-        }
-
-        // Check failure conditions
-        if (!$result->success && $conditions['on_failure']) {
-            $recentFailures = DeviceMonitoringResult::query()
-                ->where('device_id', $result->device_id)
-                ->where('created_at', '>=', now()->subSeconds($conditions['failure_window'] ?? 3600))
-                ->where('success', false)
-                ->count();
-
-            return $recentFailures >= ($conditions['min_failures'] ?? 1);
-        }
-
-        // Check recovery conditions
-        if ($result->success && $conditions['on_recovery']) {
-            $previousResult = DeviceMonitoringResult::query()
-                ->where('device_id', $result->device_id)
-                ->where('id', '<', $result->id)
-                ->orderByDesc('id')
-                ->first();
-
-            return $previousResult && !$previousResult->success;
-        }
-
-        return false;
-    }
-
-    private function sendEmailNotification(NotificationSetting $setting, DeviceMonitoringResult $result): void
-    {
-        $config = $setting->configuration;
-        $device = $result->device;
-        $scenario = $result->testScenario;
-
-        $subject = $result->success
-            ? "Device {$device->name} has recovered"
-            : "Device {$device->name} test failed";
-
-        Mail::raw(
-            $this->formatNotificationMessage($result),
-            function ($message) use ($config, $subject) {
-                $message->subject($subject);
-                
-                foreach ($config['recipients'] ?? [] as $recipient) {
-                    $message->to($recipient);
-                }
-                
-                foreach ($config['cc'] ?? [] as $cc) {
-                    $message->cc($cc);
-                }
-                
-                foreach ($config['bcc'] ?? [] as $bcc) {
-                    $message->bcc($bcc);
-                }
+        // Check if enough time has passed since the last notification
+        if ($notification->last_notification_at) {
+            $minInterval = $notification->notificationType->configuration['min_interval'] ?? 300; // Default 5 minutes
+            $nextAllowed = Carbon::parse($notification->last_notification_at)->addSeconds($minInterval);
+            if (Carbon::now()->lt($nextAllowed)) {
+                return false;
             }
-        );
+        }
+
+        return true;
     }
 
-    private function sendSlackNotification(NotificationSetting $setting, DeviceMonitoringResult $result): void
+    private function sendEmailNotification(NotificationType $type, DeviceMonitoringResult $result): void
     {
-        $config = $setting->configuration;
+        $config = $type->configuration;
+        $recipients = $config['recipients'] ?? [];
         
-        Http::post($config['webhook_url'], [
-            'channel' => $config['channel'] ?? null,
-            'username' => $config['username'] ?? 'Heart-Beat Monitor',
-            'text' => $this->formatNotificationMessage($result),
-            'icon_emoji' => $result->success ? ':white_check_mark:' : ':x:',
+        if (empty($recipients)) {
+            return;
+        }
+
+        $testScenario = $result->testScenario;
+        $subject = "Test Scenario Alert: {$testScenario->name}";
+        $body = "Test scenario {$testScenario->name} has failed.\n\n";
+        $body .= "Details:\n";
+        $body .= "- Success Rate (1h): {$testScenario->success_rate_1h}%\n";
+        $body .= "- Success Rate (24h): {$testScenario->success_rate_24h}%\n";
+        $body .= "- Last Success: " . ($testScenario->last_success_at ? $testScenario->last_success_at->diffForHumans() : 'Never') . "\n";
+        $body .= "- Error: {$result->error_message}\n";
+
+        Mail::raw($body, function ($message) use ($recipients, $subject) {
+            $message->to($recipients)
+                   ->subject($subject);
+        });
+    }
+
+    private function sendSlackNotification(NotificationType $type, DeviceMonitoringResult $result): void
+    {
+        $config = $type->configuration;
+        $webhookUrl = $config['webhook_url'] ?? null;
+        
+        if (!$webhookUrl) {
+            return;
+        }
+
+        $testScenario = $result->testScenario;
+        $message = [
+            'text' => "Test Scenario Alert: {$testScenario->name}\n" .
+                     "Success Rate (1h): {$testScenario->success_rate_1h}%\n" .
+                     "Success Rate (24h): {$testScenario->success_rate_24h}%\n" .
+                     "Error: {$result->error_message}"
+        ];
+
+        Http::post($webhookUrl, $message);
+    }
+
+    private function sendWebhookNotification(NotificationType $type, DeviceMonitoringResult $result): void
+    {
+        $config = $type->configuration;
+        $webhookUrl = $config['url'] ?? null;
+        $method = strtoupper($config['method'] ?? 'POST');
+        $headers = $config['headers'] ?? [];
+        
+        if (!$webhookUrl) {
+            return;
+        }
+
+        $testScenario = $result->testScenario;
+        $payload = [
+            'test_scenario' => [
+                'id' => $testScenario->id,
+                'name' => $testScenario->name,
+                'success_rate_1h' => $testScenario->success_rate_1h,
+                'success_rate_24h' => $testScenario->success_rate_24h,
+                'last_success_at' => $testScenario->last_success_at,
+            ],
+            'result' => [
+                'id' => $result->id,
+                'error_message' => $result->error_message,
+                'created_at' => $result->created_at,
+            ]
+        ];
+
+        Http::withHeaders($headers)->send($method, $webhookUrl, ['json' => $payload]);
+    }
+
+    private function updateNotificationTimestamp(TestScenarioNotification $notification, DeviceMonitoringResult $result): void
+    {
+        $notification->update([
+            'last_notification_at' => now(),
+            'last_result_id' => $result->id
         ]);
-    }
-
-    private function sendWebhookNotification(NotificationSetting $setting, DeviceMonitoringResult $result): void
-    {
-        $config = $setting->configuration;
-        
-        Http::withHeaders($config['headers'] ?? [])
-            ->{strtolower($config['method'] ?? 'post')}($config['url'], [
-                'device' => $result->device->toArray(),
-                'result' => $result->toArray(),
-                'message' => $this->formatNotificationMessage($result),
-            ]);
-    }
-
-    private function formatNotificationMessage(DeviceMonitoringResult $result): string
-    {
-        $device = $result->device;
-        $scenario = $result->testScenario;
-        $status = $result->success ? 'PASSED' : 'FAILED';
-
-        $message = "Test Status: {$status}\n";
-        $message .= "Device: {$device->name}\n";
-        $message .= "Test: {$scenario->name}\n";
-        $message .= "Type: {$scenario->test_type}\n";
-        $message .= "Response Time: {$result->response_time_ms}ms\n";
-
-        if (!$result->success) {
-            $message .= "Error: {$result->error_message}\n";
-        }
-
-        if ($result->metadata) {
-            $message .= "\nAdditional Information:\n";
-            foreach ($result->metadata as $key => $value) {
-                $message .= "- {$key}: " . json_encode($value) . "\n";
-            }
-        }
-
-        return $message;
-    }
-
-    private function updateNotificationTimestamp(NotificationSetting $setting, DeviceMonitoringResult $result): void
-    {
-        $cacheKey = "notification:{$setting->id}:last_sent";
-        Cache::put($cacheKey, now(), now()->addDay());
     }
 }

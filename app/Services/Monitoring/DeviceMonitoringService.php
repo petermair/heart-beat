@@ -201,4 +201,198 @@ class DeviceMonitoringService
 
         return $result;
     }
+
+    /**
+     * Send a command from ThingsBoard to a device and wait for response
+     *
+     * @param  Device  $device  The device to send command to
+     * @param  string  $command  The command to send
+     * @param  array  $params  Command parameters
+     * @return array The command result
+     */
+    public function sendThingsBoardCommand(Device $device, string $command, array $params = []): array
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->thingsBoardService->executeRpcCall(
+                $device->thingsboardServer,
+                $device->device_eui,
+                $command,
+                $params
+            );
+
+            return [
+                'success' => $result['success'] ?? false,
+                'error_message' => $result['error_message'] ?? null,
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        }
+    }
+
+    /**
+     * Wait for a response from a device after sending a command
+     *
+     * @param  Device  $device  The device to wait for
+     * @param  int  $messageId  The message ID to wait for
+     * @param  int  $timeout  Timeout in seconds
+     * @return array The wait result
+     */
+    public function waitForDeviceResponse(Device $device, int $messageId, int $timeout = 30): array
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->chirpStackService->waitForDeviceResponse(
+                $device->chirpstackServer,
+                $device->application_id,
+                $device->device_eui,
+                $messageId,
+                $timeout
+            );
+
+            return [
+                'success' => $result['success'] ?? false,
+                'error_message' => $result['error_message'] ?? null,
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        }
+    }
+
+    /**
+     * Test direct command from ThingsBoard to device
+     *
+     * @param  Device  $device  The device to test
+     * @param  array  $params  Test parameters
+     * @return array The test result
+     */
+    public function testThingsBoardDirectCommand(Device $device, array $params = []): array
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->thingsBoardService->testDirectCommand(
+                $device->thingsboardServer,
+                $device->device_eui,
+                $params
+            );
+
+            return [
+                'success' => $result['success'] ?? false,
+                'error_message' => $result['error_message'] ?? null,
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        }
+    }
+
+    /**
+     * Test direct telemetry from device to ThingsBoard
+     *
+     * @param  Device  $device  The device to test
+     * @param  array  $params  Test parameters
+     * @return array The test result
+     */
+    public function testDeviceDirectTelemetry(Device $device, array $params = []): array
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->thingsBoardService->testDirectTelemetry(
+                $device->thingsboardServer,
+                $device->device_eui,
+                $params
+            );
+
+            return [
+                'success' => $result['success'] ?? false,
+                'error_message' => $result['error_message'] ?? null,
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        }
+    }
+
+    /**
+     * Test ThingsBoard MQTT connection
+     *
+     * @param  Device  $device  The device to test
+     * @return array The test result
+     */
+    public function testThingsBoardMqttConnection(Device $device): array
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->thingsBoardService->testMqttConnection(
+                $device->thingsboardServer,
+                $device->device_eui
+            );
+
+            return [
+                'success' => $result['success'] ?? false,
+                'error_message' => $result['error_message'] ?? null,
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        }
+    }
+
+    /**
+     * Test ChirpStack MQTT connection
+     *
+     * @param  Device  $device  The device to test
+     * @return array The test result
+     */
+    public function testChirpStackMqttConnection(Device $device): array
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->chirpStackService->testMqttConnection(
+                $device->chirpstackServer,
+                $device->application_id,
+                $device->device_eui
+            );
+
+            return [
+                'success' => $result['success'] ?? false,
+                'error_message' => $result['error_message'] ?? null,
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        }
+    }
 }

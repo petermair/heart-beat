@@ -341,4 +341,128 @@ class ThingsBoardService
             $this->client->authenticate($this->token);
         }
     }
+
+    /**
+     * Test direct command functionality
+     *
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  string  $deviceEui  The device EUI
+     * @param  array  $params  Test parameters
+     * @return array Test result
+     */
+    public function testDirectCommand(string $server, string $deviceEui, array $params = []): array
+    {
+        try {
+            if (! $this->token) {
+                $this->login();
+            }
+
+            $response = $this->client->setBaseUrl($server)
+                ->deviceRpc($deviceEui, [
+                    'method' => 'test_direct_command',
+                    'params' => $params,
+                ])
+                ->json();
+
+            return [
+                'success' => isset($response['response']),
+                'response' => $response['response'] ?? null,
+                'error_message' => ! isset($response['response'])
+                    ? 'No response received from device'
+                    : null,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'response' => null,
+                'error_message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Test direct telemetry functionality
+     *
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  string  $deviceEui  The device EUI
+     * @param  array  $params  Test parameters
+     * @return array Test result
+     */
+    public function testDirectTelemetry(string $server, string $deviceEui, array $params = []): array
+    {
+        try {
+            if (! $this->token) {
+                $this->login();
+            }
+
+            $startTime = time();
+            $response = $this->client->setBaseUrl($server)
+                ->deviceTelemetry($deviceEui, [
+                    'timeWindow' => 60,
+                    'keys' => implode(',', array_keys($params)),
+                ])
+                ->json();
+
+            // Check if we received telemetry with matching parameters
+            $success = false;
+            $errorMessage = 'No matching telemetry data found';
+
+            if (! empty($response)) {
+                foreach ($response as $key => $values) {
+                    if (! empty($values) && isset($params[$key])) {
+                        $latestValue = end($values);
+                        if ($latestValue['value'] == $params[$key] && $latestValue['ts'] >= $startTime * 1000) {
+                            $success = true;
+                            $errorMessage = null;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return [
+                'success' => $success,
+                'response' => $response,
+                'error_message' => $errorMessage,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'response' => null,
+                'error_message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Test MQTT connection
+     *
+     * @param  string  $server  The ThingsBoard server URL
+     * @param  string  $deviceEui  The device EUI
+     * @return array Test result
+     */
+    public function testMqttConnection(string $server, string $deviceEui): array
+    {
+        try {
+            if (! $this->token) {
+                $this->login();
+            }
+
+            $response = $this->client->setBaseUrl($server)
+                ->testMqttConnection($deviceEui)
+                ->json();
+
+            return [
+                'success' => $response['connected'] ?? false,
+                'error_message' => ! ($response['connected'] ?? false)
+                    ? 'Failed to establish MQTT connection'
+                    : null,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+            ];
+        }
+    }
 }

@@ -158,8 +158,8 @@ class TestExecutionService
             $monitoringResult = new DeviceMonitoringResult;
             $monitoringResult->device_id = $device->id;
             $monitoringResult->test_scenario_id = $scenario->id;
-            $monitoringResult->success = false; // Will be updated by webhook
-            $monitoringResult->response_time_ms = 0; // Will be updated by webhook
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
             $monitoringResult->metadata = [
                 'flow_number' => 1,
                 'timestamp' => time(),
@@ -167,23 +167,16 @@ class TestExecutionService
             ];
             $monitoringResult->save();
 
-            // Flow 1: Send JSON, receive LPP
-            $result = $this->monitoringService->checkMqttStatus(
+            // Flow 1: Send to ThingsBoard
+            $this->monitoringService->checkMqttStatus(
                 $device,
                 'telemetry',
                 [
                     'f001digitalinput1' => 1,
-                    'f001unsigned4b2' => $monitoringResult->id, // Use record ID as counter
+                    'f001unsigned4b2' => $monitoringResult->id,
                     'f001unsigned4b3' => time(),
                 ]
             );
-
-            if (!$result['success']) {
-                // Only update if send failed
-                $monitoringResult->success = false;
-                $monitoringResult->error_message = $result['error_message'] ?? 'Failed to send message';
-                $monitoringResult->save();
-            }
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -209,8 +202,8 @@ class TestExecutionService
             $monitoringResult = new DeviceMonitoringResult;
             $monitoringResult->device_id = $device->id;
             $monitoringResult->test_scenario_id = $scenario->id;
-            $monitoringResult->success = false; // Will be updated by webhook
-            $monitoringResult->response_time_ms = 0; // Will be updated by webhook
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
             $monitoringResult->metadata = [
                 'flow_number' => 2,
                 'timestamp' => time(),
@@ -218,10 +211,9 @@ class TestExecutionService
             ];
             $monitoringResult->save();
 
-            // Flow 2: Send LPP, receive JSON
+            // Flow 2: Send to ChirpStack
             $lppPayload = $this->createLppPayload(2, $monitoringResult->id, time());
-
-            $result = $this->monitoringService->checkMqttStatus(
+            $this->monitoringService->checkMqttStatus(
                 $device,
                 'telemetry',
                 [
@@ -229,13 +221,6 @@ class TestExecutionService
                     'fPort' => 1,
                 ]
             );
-
-            if (!$result['success']) {
-                // Only update if send failed
-                $monitoringResult->success = false;
-                $monitoringResult->error_message = $result['error_message'] ?? 'Failed to send message';
-                $monitoringResult->save();
-            }
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -257,10 +242,22 @@ class TestExecutionService
         try {
             $device = $scenario->mqttDevice;
 
-            // Flow 3: Send LPP, receive LPP
-            $lppPayload = $this->createLppPayload(3, $this->getNextCounter(), time());
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult;
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
+            $monitoringResult->metadata = [
+                'flow_number' => 3,
+                'timestamp' => time(),
+                'format' => 'two-way-route',
+            ];
+            $monitoringResult->save();
 
-            $result = $this->monitoringService->checkMqttStatus(
+            // Flow 3: Send to ChirpStack
+            $lppPayload = $this->createLppPayload(3, $monitoringResult->id, time());
+            $this->monitoringService->checkMqttStatus(
                 $device,
                 'telemetry',
                 [
@@ -268,20 +265,6 @@ class TestExecutionService
                     'fPort' => 1,
                 ]
             );
-
-            $monitoringResult = new DeviceMonitoringResult;
-            $monitoringResult->device_id = $device->id;
-            $monitoringResult->test_scenario_id = $scenario->id;
-            $monitoringResult->success = $result['success'];
-            $monitoringResult->error_message = $result['error_message'] ?? null;
-            $monitoringResult->response_time_ms = $result['response_time_ms'] ?? 0;
-            $monitoringResult->metadata = [
-                'flow_number' => 3,
-                'counter' => $result['counter'] ?? 0,
-                'timestamp' => $result['timestamp'] ?? 0,
-                'format' => 'lpp->lpp',
-            ];
-            $monitoringResult->save();
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -303,10 +286,22 @@ class TestExecutionService
         try {
             $device = $scenario->mqttDevice;
 
-            // Flow 4: Send LPP, receive JSON
-            $lppPayload = $this->createLppPayload(4, $this->getNextCounter(), time());
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult;
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
+            $monitoringResult->metadata = [
+                'flow_number' => 4,
+                'timestamp' => time(),
+                'format' => 'direct-test-1',
+            ];
+            $monitoringResult->save();
 
-            $result = $this->monitoringService->checkMqttStatus(
+            // Flow 4: Send to ChirpStack
+            $lppPayload = $this->createLppPayload(4, $monitoringResult->id, time());
+            $this->monitoringService->checkMqttStatus(
                 $device,
                 'telemetry',
                 [
@@ -314,20 +309,6 @@ class TestExecutionService
                     'fPort' => 1,
                 ]
             );
-
-            $monitoringResult = new DeviceMonitoringResult;
-            $monitoringResult->device_id = $device->id;
-            $monitoringResult->test_scenario_id = $scenario->id;
-            $monitoringResult->success = $result['success'];
-            $monitoringResult->error_message = $result['error_message'] ?? null;
-            $monitoringResult->response_time_ms = $result['response_time_ms'] ?? 0;
-            $monitoringResult->metadata = [
-                'flow_number' => 4,
-                'counter' => $result['counter'] ?? 0,
-                'timestamp' => $result['timestamp'] ?? 0,
-                'format' => 'lpp->json',
-            ];
-            $monitoringResult->save();
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -349,30 +330,29 @@ class TestExecutionService
         try {
             $device = $scenario->mqttDevice;
 
-            // Flow 5: Send JSON, receive LPP
-            $result = $this->monitoringService->checkMqttStatus(
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult;
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
+            $monitoringResult->metadata = [
+                'flow_number' => 5,
+                'timestamp' => time(),
+                'format' => 'direct-test-2',
+            ];
+            $monitoringResult->save();
+
+            // Flow 5: Send to ThingsBoard
+            $this->monitoringService->checkMqttStatus(
                 $device,
                 'telemetry',
                 [
                     'f001digitalinput1' => 5,
-                    'f001unsigned4b2' => $this->getNextCounter(),
+                    'f001unsigned4b2' => $monitoringResult->id,
                     'f001unsigned4b3' => time(),
                 ]
             );
-
-            $monitoringResult = DeviceMonitoringResult::create([
-                'device_id' => $device->id,
-                'test_scenario_id' => $scenario->id,
-                'success' => $result['success'],
-                'error_message' => $result['error_message'] ?? null,
-                'response_time_ms' => $result['response_time_ms'] ?? 0,
-                'metadata' => [
-                    'flow_number' => 5,
-                    'counter' => $result['counter'] ?? 0,
-                    'timestamp' => $result['timestamp'] ?? 0,
-                    'format' => 'json->lpp',
-                ],
-            ]);
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -394,30 +374,29 @@ class TestExecutionService
         try {
             $device = $scenario->mqttDevice;
 
-            // Flow 6: Send JSON, receive JSON
-            $result = $this->monitoringService->checkMqttStatus(
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult;
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
+            $monitoringResult->metadata = [
+                'flow_number' => 6,
+                'timestamp' => time(),
+                'format' => 'tb-mqtt-health',
+            ];
+            $monitoringResult->save();
+
+            // Flow 6: Send to ThingsBoard
+            $this->monitoringService->checkMqttStatus(
                 $device,
                 'telemetry',
                 [
                     'f001digitalinput1' => 6,
-                    'f001unsigned4b2' => $this->getNextCounter(),
+                    'f001unsigned4b2' => $monitoringResult->id,
                     'f001unsigned4b3' => time(),
                 ]
             );
-
-            $monitoringResult = DeviceMonitoringResult::create([
-                'device_id' => $device->id,
-                'test_scenario_id' => $scenario->id,
-                'success' => $result['success'],
-                'error_message' => $result['error_message'] ?? null,
-                'response_time_ms' => $result['response_time_ms'] ?? 0,
-                'metadata' => [
-                    'flow_number' => 6,
-                    'counter' => $result['counter'] ?? 0,
-                    'timestamp' => $result['timestamp'] ?? 0,
-                    'format' => 'json->json',
-                ],
-            ]);
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -439,10 +418,22 @@ class TestExecutionService
         try {
             $device = $scenario->mqttDevice;
 
-            // Flow 7: Send LPP, receive LPP
-            $lppPayload = $this->createLppPayload(7, $this->getNextCounter(), time());
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult;
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
+            $monitoringResult->metadata = [
+                'flow_number' => 7,
+                'timestamp' => time(),
+                'format' => 'cs-mqtt-health',
+            ];
+            $monitoringResult->save();
 
-            $result = $this->monitoringService->checkMqttStatus(
+            // Flow 7: Send to ChirpStack
+            $lppPayload = $this->createLppPayload(7, $monitoringResult->id, time());
+            $this->monitoringService->checkMqttStatus(
                 $device,
                 'telemetry',
                 [
@@ -450,20 +441,6 @@ class TestExecutionService
                     'fPort' => 1,
                 ]
             );
-
-            $monitoringResult = new DeviceMonitoringResult;
-            $monitoringResult->device_id = $device->id;
-            $monitoringResult->test_scenario_id = $scenario->id;
-            $monitoringResult->success = $result['success'];
-            $monitoringResult->error_message = $result['error_message'] ?? null;
-            $monitoringResult->response_time_ms = $result['response_time_ms'] ?? 0;
-            $monitoringResult->metadata = [
-                'flow_number' => 7,
-                'counter' => $result['counter'] ?? 0,
-                'timestamp' => $result['timestamp'] ?? 0,
-                'format' => 'lpp->lpp',
-            ];
-            $monitoringResult->save();
 
             return $monitoringResult;
         } catch (\Exception $e) {
@@ -505,7 +482,6 @@ class TestExecutionService
                 'flow_number' => $flowNumber,
                 'counter' => $result['counter'] ?? 0,
                 'timestamp' => $result['timestamp'] ?? 0,
-                'status_code' => $result['status_code'] ?? 0,
             ],
         ]);
     }
@@ -519,33 +495,42 @@ class TestExecutionService
 
             $device = $scenario->httpDevice;
 
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult();
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
+            $monitoringResult->metadata = [
+                'flow_number' => 8,
+                'timestamp' => time(),
+                'format' => 'json->json',
+            ];
+            $monitoringResult->save();
+
             // Flow 8: Send JSON, receive JSON
             $result = $this->monitoringService->checkHttpStatus(
                 $device,
                 'telemetry',
                 [
                     'f001digitalinput1' => 8,
-                    'f001unsigned4b2' => $this->getNextCounter(),
+                    'f001unsigned4b2' => $monitoringResult->id,
                     'f001unsigned4b3' => time(),
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult;
-            $monitoringResult->device_id = $device->id;
-            $monitoringResult->test_scenario_id = $scenario->id;
             $monitoringResult->success = $result['success'];
             $monitoringResult->error_message = $result['error_message'] ?? null;
             $monitoringResult->response_time_ms = $result['response_time_ms'] ?? 0;
-            $monitoringResult->metadata = [
-                'flow_number' => 8,
+            $monitoringResult->metadata = array_merge($monitoringResult->metadata, [
                 'counter' => $result['counter'] ?? 0,
                 'timestamp' => $result['timestamp'] ?? 0,
-                'format' => 'json->json',
                 'status_code' => $result['status_code'] ?? 0,
-            ];
+            ]);
             $monitoringResult->save();
 
             return $monitoringResult;
+
         } catch (\Exception $e) {
             Log::channel(config('monitoring.logging.channel'))->error(
                 'Error executing HTTP Flow 8',
@@ -569,34 +554,42 @@ class TestExecutionService
 
             $device = $scenario->httpDevice;
 
-            // Flow 9: Send LPP, receive LPP
-            $lppPayload = $this->createLppPayload(9, $this->getNextCounter(), time());
+            // Create monitoring result first
+            $monitoringResult = new DeviceMonitoringResult();
+            $monitoringResult->device_id = $device->id;
+            $monitoringResult->test_scenario_id = $scenario->id;
+            $monitoringResult->success = false;
+            $monitoringResult->response_time_ms = 0;
+            $monitoringResult->metadata = [
+                'flow_number' => 9,
+                'timestamp' => time(),
+                'format' => 'json->lpp',
+            ];
+            $monitoringResult->save();
 
+            // Flow 9: Send JSON, receive LPP
             $result = $this->monitoringService->checkHttpStatus(
                 $device,
                 'telemetry',
                 [
-                    'data' => base64_encode($lppPayload),
-                    'fPort' => 1,
+                    'f001digitalinput1' => 9,
+                    'f001unsigned4b2' => $monitoringResult->id,
+                    'f001unsigned4b3' => time(),
                 ]
             );
 
-            $monitoringResult = new DeviceMonitoringResult;
-            $monitoringResult->device_id = $device->id;
-            $monitoringResult->test_scenario_id = $scenario->id;
             $monitoringResult->success = $result['success'];
             $monitoringResult->error_message = $result['error_message'] ?? null;
             $monitoringResult->response_time_ms = $result['response_time_ms'] ?? 0;
-            $monitoringResult->metadata = [
-                'flow_number' => 9,
+            $monitoringResult->metadata = array_merge($monitoringResult->metadata, [
                 'counter' => $result['counter'] ?? 0,
                 'timestamp' => $result['timestamp'] ?? 0,
-                'format' => 'lpp->lpp',
                 'status_code' => $result['status_code'] ?? 0,
-            ];
+            ]);
             $monitoringResult->save();
 
             return $monitoringResult;
+
         } catch (\Exception $e) {
             Log::channel(config('monitoring.logging.channel'))->error(
                 'Error executing HTTP Flow 9',

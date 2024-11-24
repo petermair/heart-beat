@@ -2,28 +2,32 @@
 
 namespace App\Services\Mqtt;
 
-use App\Models\MonitoringDevice;
+use App\Models\Device;
 use App\DataTransferObjects\ChirpStackMessageDto;
 use RuntimeException;
 
 class ChirpStackMqttClient extends MqttClient
 {
-    private MonitoringDevice $device;
+    private Device $device;
     private string $applicationId;
 
-    public function __construct(MonitoringDevice $device, $phpMqttClient = null)
+    public function __construct(Device $device, $phpMqttClient = null)
     {
         $this->device = $device;
-        $settings = $device->settings;
-        $credentials = $device->credentials;
+        $server = $device->chirpstackServer;
+        $broker = $server->mqttBroker;
 
-        $this->applicationId = $settings['application_id'] ?? throw new RuntimeException('Application ID is required');
+        if (!$broker) {
+            throw new RuntimeException('MQTT broker configuration is required');
+        }
+
+        $this->applicationId = $device->application_id;
         
         $config = [
-            'host' => $settings['host'] ?? 'localhost',
-            'port' => $settings['port'] ?? 1883,
+            'host' => $broker->host,
+            'port' => $broker->port,
             'client_id' => "cs_monitor_{$device->id}",
-            'username' => $credentials['chirpstack_api_key'] ?? throw new RuntimeException('API key is required'),
+            'username' => $server->credentials['api_key'] ?? throw new RuntimeException('API key is required'),
             'password' => '',
             'last_will_topic' => $this->getDeviceStatusTopic(),
             'last_will_message' => json_encode(['status' => 'offline']),
@@ -35,7 +39,7 @@ class ChirpStackMqttClient extends MqttClient
 
     private function getDeviceStatusTopic(): string
     {
-        return "application/{$this->applicationId}/device/{$this->device->credentials['chirpstack_device_eui']}/status";
+        return "application/{$this->applicationId}/device/{$this->device->device_eui}/status";
     }
 
     private function getUplinkTopic(): string

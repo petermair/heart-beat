@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Services\Mqtt\MqttMonitor;
 use App\Services\Mqtt\ThingsBoardMqttClient;
 use App\Services\Mqtt\ChirpStackMqttClient;
+use App\Models\Device;
 
 class MonitorMqttCommand extends Command
 {
@@ -14,14 +15,7 @@ class MonitorMqttCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'mqtt:monitor 
-                          {--thingsboard-host=localhost : ThingsBoard MQTT broker host}
-                          {--thingsboard-port=1883 : ThingsBoard MQTT broker port}
-                          {--thingsboard-access-token= : ThingsBoard access token}
-                          {--chirpstack-host=localhost : ChirpStack MQTT broker host}
-                          {--chirpstack-port=1883 : ChirpStack MQTT broker port}
-                          {--chirpstack-username= : ChirpStack MQTT username}
-                          {--chirpstack-password= : ChirpStack MQTT password}';
+    protected $signature = 'mqtt:monitor {device_id}';
 
     /**
      * The console command description.
@@ -37,42 +31,18 @@ class MonitorMqttCommand extends Command
      */
     public function handle(): int
     {
-        $tbConfig = [
-            'host' => $this->option('thingsboard-host'),
-            'port' => (int) $this->option('thingsboard-port'),
-            'client_id' => 'thingsboard-client-' . uniqid(),
-            'access_token' => $this->option('thingsboard-access-token'),
-            'clean_session' => true,
-            'last_will_topic' => 'v1/devices/me/attributes',
-            'last_will_message' => json_encode(['status' => 'offline']),
-            'last_will_qos' => 1,
-            'last_will_retain' => true
-        ];
+        $deviceId = $this->argument('device_id');
+        $device = Device::findOrFail($deviceId);
 
-        $csConfig = [
-            'host' => $this->option('chirpstack-host'),
-            'port' => (int) $this->option('chirpstack-port'),
-            'client_id' => 'chirpstack-client-' . uniqid(),
-            'username' => $this->option('chirpstack-username'),
-            'password' => $this->option('chirpstack-password'),
-            'clean_session' => true
-        ];
-
-        // Validate required options
-        if (!$tbConfig['access_token']) {
-            $this->error('ThingsBoard access token is required');
-            return 1;
-        }
-
-        if (!$csConfig['username'] || !$csConfig['password']) {
-            $this->error('ChirpStack username and password are required');
+        if (!$device->is_active || !$device->monitoring_enabled) {
+            $this->error('Device is not active or monitoring is disabled');
             return 1;
         }
 
         try {
-            $tbClient = new ThingsBoardMqttClient($tbConfig);
-            $csClient = new ChirpStackMqttClient($csConfig);
-            $monitor = new MqttMonitor($tbClient, $csClient);
+            $tbClient = new ThingsBoardMqttClient($device);
+            $csClient = new ChirpStackMqttClient($device);
+            $monitor = new MqttMonitor($device, $tbClient, $csClient);
 
             $this->info('Starting MQTT monitoring...');
             $this->info('Press Ctrl+C to stop');
@@ -87,16 +57,16 @@ class MonitorMqttCommand extends Command
             // Start monitoring
             $monitor->startMonitoring();
 
-            // Keep the script running
-            while (true) {
+            // Keep the script running with proper exit condition
+            while (!$monitor->isStopped()) {
                 pcntl_signal_dispatch();
                 sleep(1);
             }
+
+            return 0;
         } catch (\Exception $e) {
             $this->error('Error: ' . $e->getMessage());
             return 1;
         }
-
-        return 0;
     }
 }

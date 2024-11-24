@@ -2,24 +2,29 @@
 
 namespace App\Services\Mqtt;
 
-use App\Models\MonitoringDevice;
+use App\Models\Device;
 use RuntimeException;
 
 class ThingsBoardMqttClient extends MqttClient
 {
-    private MonitoringDevice $device;
+    private Device $device;
 
-    public function __construct(MonitoringDevice $device, $phpMqttClient = null)
+    public function __construct(Device $device, $phpMqttClient = null)
     {
         $this->device = $device;
-        $settings = $device->settings;
-        $credentials = $device->credentials;
+        $server = $device->thingsboardServer;
+        $broker = $server->mqttBroker;
+
+        if (!$broker) {
+            throw new RuntimeException('MQTT broker configuration is required');
+        }
 
         $config = [
-            'host' => $settings['host'] ?? 'localhost',
-            'port' => $settings['port'] ?? 1883,
+            'host' => $broker->host,
+            'port' => $broker->port,
             'client_id' => "tb_monitor_{$device->id}",
-            'username' => $credentials['thingsboard_access_token'] ?? throw new RuntimeException('Access token is required'),
+            'username' => $server->credentials['access_token'] ?? throw new RuntimeException('Access token is required'),
+            'password' => '',
             'last_will_topic' => "v1/devices/me/attributes",
             'last_will_message' => json_encode(['status' => 'offline']),
             'last_will_qos' => 1

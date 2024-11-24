@@ -2,7 +2,7 @@
 
 namespace App\Services\Mqtt;
 
-use App\Models\MonitoringDevice;
+use App\Models\Device;
 use App\DataTransferObjects\MessagePayloadDto;
 use App\DataTransferObjects\MessageRouteDto;
 use App\DataTransferObjects\ChirpStackMessageDto;
@@ -11,12 +11,13 @@ use RuntimeException;
 
 class MqttMonitor
 {
-    private MonitoringDevice $device;
+    private Device $device;
     private ThingsBoardMqttClient $thingsboardClient;
     private ChirpStackMqttClient $chirpstackClient;
+    private bool $stopped = false;
 
     public function __construct(
-        MonitoringDevice $device,
+        Device $device,
         ?ThingsBoardMqttClient $thingsboardClient = null,
         ?ChirpStackMqttClient $chirpstackClient = null
     ) {
@@ -53,11 +54,16 @@ class MqttMonitor
         }
     }
 
-    public function stopMonitoring(): bool
+    public function stopMonitoring(): void
     {
+        $this->stopped = true;
         $this->thingsboardClient->disconnect();
         $this->chirpstackClient->disconnect();
-        return true;
+    }
+
+    public function isStopped(): bool
+    {
+        return $this->stopped;
     }
 
     private function monitorRxPath(): void
@@ -164,7 +170,8 @@ class MqttMonitor
     {
         // Monitor device health by subscribing to join events and status updates
         $this->chirpstackClient->subscribeToJoin(function (array $event) {
-            $this->thingsboardClient->reportDeviceStatus('online', [
+            $this->thingsboardClient->sendTelemetry([
+                'status' => 'online',
                 'lastJoinTime' => time(),
                 'devAddr' => $event['devAddr'] ?? null
             ]);

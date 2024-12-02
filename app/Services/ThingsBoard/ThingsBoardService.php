@@ -6,6 +6,7 @@ use App\Http\Integrations\ThingsBoardHttp\Requests\LoginHttpRequest;
 use App\Http\Integrations\ThingsBoardHttp\ThingsBoardHttp;
 use App\Models\Device;
 use Exception;
+use Carbon\Carbon;
 
 /**
  * ThingsBoard service class
@@ -435,34 +436,35 @@ class ThingsBoardService
     }
 
     /**
-     * Test MQTT connection
+     * Wait for a message at the ThingsBoard endpoint
      *
-     * @param  string  $server  The ThingsBoard server URL
-     * @param  string  $deviceEui  The device EUI
-     * @return array Test result
+     * @param  string  $server  ThingsBoard server URL
+     * @param  string  $deviceEui  Device EUI
+     * @param  int  $timeout  Timeout in seconds
+     * @return bool Success status
      */
-    public function testMqttConnection(string $server, string $deviceEui): array
+    public function waitForEndpointMessage(string $server, string $deviceEui, int $timeout = 30): bool
     {
         try {
-            if (! $this->token) {
-                $this->login();
-            }
-
+            // Get the latest telemetry from the endpoint
             $response = $this->client->setBaseUrl($server)
-                ->testMqttConnection($deviceEui)
+                ->deviceTelemetry($deviceEui)
                 ->json();
 
-            return [
-                'success' => $response['connected'] ?? false,
-                'error_message' => ! ($response['connected'] ?? false)
-                    ? 'Failed to establish MQTT connection'
-                    : null,
-            ];
+            // Check if we have any telemetry in the last $timeout seconds
+            $now = now();
+            foreach ($response['data'] ?? [] as $key => $values) {
+                foreach ($values as $value) {
+                    $telemetryTime = Carbon::createFromTimestampMs($value['ts']);
+                    if ($telemetryTime->diffInSeconds($now) <= $timeout) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error_message' => $e->getMessage(),
-            ];
+            return false;
         }
     }
 }

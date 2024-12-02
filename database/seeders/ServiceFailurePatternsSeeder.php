@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Enums\ServiceType;
 
 class ServiceFailurePatternsSeeder extends Seeder
 {
@@ -13,7 +14,7 @@ class ServiceFailurePatternsSeeder extends Seeder
     {
         $patterns = [
             [
-                'service_name' => 'ThingsBoard',
+                'service_name' => ServiceType::THINGSBOARD->label(),
                 'description' => 'Failure pattern when ThingsBoard is down',
                 'flows' => [
                     1 => ['fails' => true,  'is_optional' => false],
@@ -28,7 +29,7 @@ class ServiceFailurePatternsSeeder extends Seeder
                 ],
             ],
             [
-                'service_name' => 'ChirpStack',
+                'service_name' => ServiceType::CHIRPSTACK->label(),
                 'description' => 'Failure pattern when ChirpStack is down',
                 'flows' => [
                     1 => ['fails' => true,  'is_optional' => false],
@@ -43,22 +44,37 @@ class ServiceFailurePatternsSeeder extends Seeder
                 ],
             ],
             [
-                'service_name' => 'MQTT Broker',
-                'description' => 'Failure pattern when MQTT Broker is down',
+                'service_name' => ServiceType::MQTT_TB->label(),
+                'description' => 'Failure pattern when MQTT TB is down',
                 'flows' => [
                     1 => ['fails' => true,  'is_optional' => false],
                     2 => ['fails' => true,  'is_optional' => false],
                     3 => ['fails' => true,  'is_optional' => false],
                     4 => ['fails' => false, 'is_optional' => false],
-                    5 => ['fails' => false, 'is_optional' => false],
+                    5 => ['fails' => true,  'is_optional' => false],
                     6 => ['fails' => true,  'is_optional' => false],
+                    7 => ['fails' => false, 'is_optional' => false],
+                    8 => ['fails' => false, 'is_optional' => true],
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
+            ],
+            [
+                'service_name' => ServiceType::MQTT_CS->label(),
+                'description' => 'Failure pattern when MQTT CS is down',
+                'flows' => [
+                    1 => ['fails' => true,  'is_optional' => false],
+                    2 => ['fails' => true,  'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => true,  'is_optional' => false],
+                    5 => ['fails' => false, 'is_optional' => false],
+                    6 => ['fails' => false, 'is_optional' => false],
                     7 => ['fails' => true,  'is_optional' => false],
                     8 => ['fails' => false, 'is_optional' => true],
                     9 => ['fails' => false, 'is_optional' => true],
                 ],
             ],
             [
-                'service_name' => 'LoRa TX',
+                'service_name' => ServiceType::LORATX->label(),
                 'description' => 'Failure pattern when LoRa TX is down',
                 'flows' => [
                     1 => ['fails' => true,  'is_optional' => false],
@@ -73,14 +89,14 @@ class ServiceFailurePatternsSeeder extends Seeder
                 ],
             ],
             [
-                'service_name' => 'LoRa RX',
+                'service_name' => ServiceType::LORARX->label(),
                 'description' => 'Failure pattern when LoRa RX is down',
                 'flows' => [
                     1 => ['fails' => false, 'is_optional' => false],
                     2 => ['fails' => true,  'is_optional' => false],
-                    3 => ['fails' => false, 'is_optional' => false],
-                    4 => ['fails' => true,  'is_optional' => false],
-                    5 => ['fails' => true,  'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => false, 'is_optional' => false],
+                    5 => ['fails' => false, 'is_optional' => false],
                     6 => ['fails' => false, 'is_optional' => false],
                     7 => ['fails' => false, 'is_optional' => false],
                     8 => ['fails' => false, 'is_optional' => true],

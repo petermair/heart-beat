@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * 
+ *
  * @property int $id
  * @property string $name
  * @property int|null $server_id
@@ -22,7 +24,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $alerts_count
  * @property-read \App\Models\MqttBroker|null $mqttBroker
  * @property-read \App\Models\Server|null $server
- *
  * @method static \Database\Factories\AlertRuleFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AlertRule newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AlertRule newQuery()
@@ -37,7 +38,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AlertRule whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AlertRule whereServerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AlertRule whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class AlertRule extends Model

@@ -7,6 +7,10 @@ use App\Models\TestScenario;
 use App\Services\ChirpStack\ChirpStackService;
 use App\Services\Mqtt\MqttMonitor;
 use App\Services\ThingsBoard\ThingsBoardService;
+use App\Enums\FlowType;
+use App\Enums\TestResultStatus;
+use App\Enums\ServiceType;
+use App\Services\Device\DeviceCommunicationService;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -16,6 +20,7 @@ class TestExecutionService
         protected ChirpStackService $chirpStackService,
         protected ThingsBoardService $thingsBoardService,
         protected MqttMonitor $mqttService,
+        protected DeviceCommunicationService $deviceCommunicationService,
     ) {}
 
     public function executeScenario(TestScenario $scenario): void
@@ -27,11 +32,9 @@ class TestExecutionService
 
         try {
             // Execute all test flows for this scenario
-            $this->executeFullRoute1($scenario);
-            $this->executeOneWayRoute($scenario);
-            $this->executeTwoWayRoute($scenario);
-            $this->executeDirectTest1($scenario);
-            $this->executeDirectTest2($scenario);
+            $this->executeThingsBoardToChirpStack($scenario);
+            $this->executeChirpStackToThingsBoard($scenario);
+            $this->executeThingsBoardToChirpStackToThingsBoard($scenario);
             $this->executeTbMqttHealth($scenario);
             $this->executeCsMqttHealth($scenario);
             $this->executeTbHttpHealth($scenario);
@@ -44,97 +47,38 @@ class TestExecutionService
         }
     }
 
-    protected function executeFullRoute1(TestScenario $scenario): void
+    /**
+     * Flow 1: ThingsBoard -> ChirpStack
+     * 
+     * Flow:
+     * 1. ThingsBoard sends JSON via HTTP
+     * 2. Our App receives via HTTP
+     * 3. Our App converts to LPP
+     * 4. Our App sends to ChirpStack
+     * 
+     * Status: Only set PENDING, let webhook handle the rest
+     */
+    protected function executeThingsBoardToChirpStack(TestScenario $scenario): void
     {
         $result = new TestResult([
             'test_scenario_id' => $scenario->id,
-            'flow_type' => TestResult::FLOW_FULL_ROUTE_1,
+            'flow_type' => FlowType::TB_TO_CS,
             'start_time' => now(),
+            'status' => TestResultStatus::PENDING,
         ]);
 
         try {
-            // Step 1: Send command from ThingsBoard to device
-            $tbSuccess = $this->thingsBoardService->sendDeviceCommand(
+            $this->deviceCommunicationService->sendThingsBoardCommand(
                 $scenario->httpDevice,
-                ['command' => 'test_full_route']
+                [
+                    'flowNumber' => 1,
+                    'testResultId' => $result->id,
+                    'timestamp' => time(),
+                ]
             );
-            if (! $tbSuccess) {
-                throw new Exception('Failed to send command from ThingsBoard');
-            }
-
-            // Step 2: Verify MQTT message was received
-            $mqttSuccess = $this->mqttService->waitForMessage(
-                $scenario->mqttDevice,
-                timeout: $scenario->timeout_seconds
-            );
-            if (! $mqttSuccess) {
-                throw new Exception('Failed to receive MQTT message');
-            }
-
-            // Step 3: Verify message was forwarded to ChirpStack
-            $csSuccess = $this->chirpStackService->waitForDeviceMessage(
-                $scenario->mqttDevice,
-                timeout: $scenario->timeout_seconds
-            );
-            if (! $csSuccess) {
-                throw new Exception('Failed to receive message in ChirpStack');
-            }
-
-            // All steps succeeded
-            $result->status = TestResult::STATUS_SUCCESS;
         } catch (Exception $e) {
-            $result->status = TestResult::STATUS_FAILURE;
+            // Just log the error, don't change status
             $result->error_message = $e->getMessage();
-            $result->service_type = $this->determineFailedService($e->getMessage());
-        }
-
-        // Complete and save the result
-        $result->end_time = now();
-        $result->execution_time_ms = (int) $result->end_time->diffInMilliseconds($result->start_time);
-        $scenario->results()->save($result);
-    }
-
-    protected function executeOneWayRoute(TestScenario $scenario): void
-    {
-        $result = new TestResult([
-            'test_scenario_id' => $scenario->id,
-            'flow_type' => TestResult::FLOW_ONE_WAY_ROUTE,
-            'start_time' => now(),
-        ]);
-
-        try {
-            // Step 1: Send uplink from ChirpStack
-            $csSuccess = $this->chirpStackService->simulateDeviceUplink(
-                $scenario->mqttDevice,
-                ['data' => 'test_one_way']
-            );
-            if (! $csSuccess) {
-                throw new Exception('Failed to send uplink from ChirpStack');
-            }
-
-            // Step 2: Verify MQTT message was received
-            $mqttSuccess = $this->mqttService->waitForMessage(
-                $scenario->mqttDevice,
-                timeout: $scenario->timeout_seconds
-            );
-            if (! $mqttSuccess) {
-                throw new Exception('Failed to receive MQTT message');
-            }
-
-            // Step 3: Verify message was forwarded to ThingsBoard
-            $tbSuccess = $this->thingsBoardService->waitForTelemetry(
-                $scenario->httpDevice,
-                timeout: $scenario->timeout_seconds
-            );
-            if (! $tbSuccess) {
-                throw new Exception('Failed to receive telemetry in ThingsBoard');
-            }
-
-            $result->status = TestResult::STATUS_SUCCESS;
-        } catch (Exception $e) {
-            $result->status = TestResult::STATUS_FAILURE;
-            $result->error_message = $e->getMessage();
-            $result->service_type = $this->determineFailedService($e->getMessage());
         }
 
         $result->end_time = now();
@@ -142,44 +86,111 @@ class TestExecutionService
         $scenario->results()->save($result);
     }
 
-    protected function executeTwoWayRoute(TestScenario $scenario): void
+    /**
+     * Flow 2: ChirpStack -> ThingsBoard
+     * 
+     * Flow:
+     * 1. Our App creates LPP data
+     * 2. Our App sends to ChirpStack via MQTT
+     * 3. ChirpStack processes and sends back
+     * 4. Our App receives via webhook
+     * 5. Our App converts to JSON
+     * 6. Our App sends to ThingsBoard
+     * 
+     * Status: Only set PENDING, let webhook handle the rest
+     */
+    protected function executeChirpStackToThingsBoard(TestScenario $scenario): void
     {
-        // Similar to OneWayRoute but includes return path through FullRoute1
-        // Implementation follows the same pattern
+        $result = new TestResult([
+            'test_scenario_id' => $scenario->id,
+            'flow_type' => FlowType::CS_TO_TB,
+            'start_time' => now(),
+            'status' => TestResultStatus::PENDING,
+        ]);
+
+        try {
+            $this->deviceCommunicationService->sendChirpStackMessage(
+                $scenario->mqttDevice,
+                2, // Flow 2: CS -> TB
+                $result->id
+            );
+        } catch (Exception $e) {
+            // Just log the error, don't change status
+            $result->error_message = $e->getMessage();
+        }
+
+        $result->end_time = now();
+        $result->execution_time_ms = (int) $result->end_time->diffInMilliseconds($result->start_time);
+        $scenario->results()->save($result);
     }
 
-    protected function executeDirectTest1(TestScenario $scenario): void
+    /**
+     * Flow 3: ThingsBoard -> ChirpStack -> ThingsBoard
+     * 
+     * Flow:
+     * 1. ThingsBoard sends JSON via HTTP
+     * 2. Our App receives via HTTP
+     * 3. Our App converts to LPP
+     * 4. Our App sends to ChirpStack
+     * 5. ChirpStack processes and sends back
+     * 6. Our App receives via webhook
+     * 7. Our App converts to JSON
+     * 8. Our App sends to ThingsBoard
+     * 
+     * Status: Only set PENDING, let webhook handle the rest
+     */
+    protected function executeThingsBoardToChirpStackToThingsBoard(TestScenario $scenario): void
     {
-        // Direct test from ChirpStack to ThingsBoard
-        // Implementation follows the same pattern
-    }
+        $result = new TestResult([
+            'test_scenario_id' => $scenario->id,
+            'flow_type' => FlowType::TB_TO_CS_TO_TB,
+            'start_time' => now(),
+            'status' => TestResultStatus::PENDING,
+        ]);
 
-    protected function executeDirectTest2(TestScenario $scenario): void
-    {
-        // Direct test from ThingsBoard to ChirpStack
-        // Implementation follows the same pattern
+        try {
+            $this->deviceCommunicationService->sendThingsBoardCommand(
+                $scenario->httpDevice,
+                [
+                    'flowNumber' => 3,
+                    'testResultId' => $result->id,
+                    'timestamp' => time(),
+                ]
+            );
+        } catch (Exception $e) {
+            // Just log the error, don't change status
+            $result->error_message = $e->getMessage();
+        }
+
+        $result->end_time = now();
+        $result->execution_time_ms = (int) $result->end_time->diffInMilliseconds($result->start_time);
+        $scenario->results()->save($result);
     }
 
     protected function executeTbMqttHealth(TestScenario $scenario): void
     {
         $result = new TestResult([
             'test_scenario_id' => $scenario->id,
-            'flow_type' => TestResult::FLOW_TB_MQTT_HEALTH,
+            'flow_type' => FlowType::TB_MQTT_HEALTH,
             'start_time' => now(),
-            'service_type' => TestResult::SERVICE_THINGSBOARD,
+            'status' => TestResultStatus::PENDING,
         ]);
 
         try {
             // Test MQTT connection to ThingsBoard
-            $success = $this->thingsBoardService->testMqttConnection($scenario->mqttDevice);
-            if (! $success) {
-                throw new Exception('Failed to connect to ThingsBoard via MQTT');
+            $success = $this->deviceCommunicationService->checkThingsBoardMqttHealth(
+                $scenario->mqttDevice
+            );
+
+            if (!$success) {
+                throw new Exception('Failed to connect to ThingsBoard MQTT');
             }
 
-            $result->status = TestResult::STATUS_SUCCESS;
+            $result->status = TestResultStatus::SUCCESS;
         } catch (Exception $e) {
-            $result->status = TestResult::STATUS_FAILURE;
+            $result->status = TestResultStatus::FAILURE;
             $result->error_message = $e->getMessage();
+            $result->service_type = ServiceType::THINGSBOARD;
         }
 
         $result->end_time = now();
@@ -191,22 +202,26 @@ class TestExecutionService
     {
         $result = new TestResult([
             'test_scenario_id' => $scenario->id,
-            'flow_type' => TestResult::FLOW_CS_MQTT_HEALTH,
+            'flow_type' => FlowType::CS_MQTT_HEALTH,
             'start_time' => now(),
-            'service_type' => TestResult::SERVICE_CHIRPSTACK,
+            'status' => TestResultStatus::PENDING,
         ]);
 
         try {
             // Test MQTT connection to ChirpStack
-            $success = $this->chirpStackService->testMqttConnection($scenario->mqttDevice);
-            if (! $success) {
-                throw new Exception('Failed to connect to ChirpStack via MQTT');
+            $success = $this->deviceCommunicationService->checkChirpStackMqttHealth(
+                $scenario->mqttDevice
+            );
+
+            if (!$success) {
+                throw new Exception('Failed to connect to ChirpStack MQTT');
             }
 
-            $result->status = TestResult::STATUS_SUCCESS;
+            $result->status = TestResultStatus::SUCCESS;
         } catch (Exception $e) {
-            $result->status = TestResult::STATUS_FAILURE;
+            $result->status = TestResultStatus::FAILURE;
             $result->error_message = $e->getMessage();
+            $result->service_type = ServiceType::CHIRPSTACK;
         }
 
         $result->end_time = now();
@@ -218,22 +233,26 @@ class TestExecutionService
     {
         $result = new TestResult([
             'test_scenario_id' => $scenario->id,
-            'flow_type' => TestResult::FLOW_TB_HTTP_HEALTH,
+            'flow_type' => FlowType::TB_HTTP_HEALTH,
             'start_time' => now(),
-            'service_type' => TestResult::SERVICE_THINGSBOARD,
+            'status' => TestResultStatus::PENDING,
         ]);
 
         try {
             // Test HTTP connection to ThingsBoard
-            $success = $this->thingsBoardService->testHttpConnection($scenario->httpDevice);
-            if (! $success) {
-                throw new Exception('Failed to connect to ThingsBoard via HTTP');
+            $success = $this->deviceCommunicationService->checkThingsBoardHttpHealth(
+                $scenario->httpDevice
+            );
+
+            if (!$success) {
+                throw new Exception('Failed to connect to ThingsBoard HTTP');
             }
 
-            $result->status = TestResult::STATUS_SUCCESS;
+            $result->status = TestResultStatus::SUCCESS;
         } catch (Exception $e) {
-            $result->status = TestResult::STATUS_FAILURE;
+            $result->status = TestResultStatus::FAILURE;
             $result->error_message = $e->getMessage();
+            $result->service_type = ServiceType::THINGSBOARD;
         }
 
         $result->end_time = now();
@@ -245,22 +264,26 @@ class TestExecutionService
     {
         $result = new TestResult([
             'test_scenario_id' => $scenario->id,
-            'flow_type' => TestResult::FLOW_CS_HTTP_HEALTH,
+            'flow_type' => FlowType::CS_HTTP_HEALTH,
             'start_time' => now(),
-            'service_type' => TestResult::SERVICE_CHIRPSTACK,
+            'status' => TestResultStatus::PENDING,
         ]);
 
         try {
             // Test HTTP connection to ChirpStack
-            $success = $this->chirpStackService->testHttpConnection($scenario->httpDevice);
-            if (! $success) {
-                throw new Exception('Failed to connect to ChirpStack via HTTP');
+            $success = $this->deviceCommunicationService->checkChirpStackHttpHealth(
+                $scenario->httpDevice
+            );
+
+            if (!$success) {
+                throw new Exception('Failed to connect to ChirpStack HTTP');
             }
 
-            $result->status = TestResult::STATUS_SUCCESS;
+            $result->status = TestResultStatus::SUCCESS;
         } catch (Exception $e) {
-            $result->status = TestResult::STATUS_FAILURE;
+            $result->status = TestResultStatus::FAILURE;
             $result->error_message = $e->getMessage();
+            $result->service_type = ServiceType::CHIRPSTACK;
         }
 
         $result->end_time = now();
@@ -268,18 +291,46 @@ class TestExecutionService
         $scenario->results()->save($result);
     }
 
-    protected function determineFailedService(string $errorMessage): string
+    protected function determineFailedService(string $errorMessage): ServiceType
     {
         if (str_contains($errorMessage, 'ThingsBoard')) {
-            return TestResult::SERVICE_THINGSBOARD;
+            return ServiceType::THINGSBOARD;
         }
         if (str_contains($errorMessage, 'MQTT')) {
-            return TestResult::SERVICE_MQTT;
+            if (str_contains($errorMessage, 'ThingsBoard')) {
+                return ServiceType::MQTT_TB;
+            }
+            return ServiceType::MQTT_CS;
         }
         if (str_contains($errorMessage, 'ChirpStack')) {
-            return TestResult::SERVICE_CHIRPSTACK;
+            return ServiceType::CHIRPSTACK;
         }
 
-        return TestResult::SERVICE_UNKNOWN;
+        return ServiceType::CHIRPSTACK; // Default to ChirpStack as it's the most common failure point
+    }
+
+    /**
+     * Create LPP data for flow validation
+     */
+    private function createLppData(int $flowNumber, int $testResultId, int $timestamp): string
+    {
+        $data = '';
+        
+        // Channel 1: Flow number (digital input)
+        $data .= chr(1); // Channel
+        $data .= chr(0); // Digital Input type
+        $data .= chr($flowNumber);
+        
+        // Channel 2: Test result ID (unsigned 4B)
+        $data .= chr(2); // Channel
+        $data .= chr(0xFE); // Unsigned 4B type
+        $data .= pack('N', $testResultId);
+        
+        // Channel 3: Timestamp (unsigned 4B)
+        $data .= chr(3); // Channel
+        $data .= chr(0xFE); // Unsigned 4B type
+        $data .= pack('N', $timestamp);
+        
+        return base64_encode($data);
     }
 }

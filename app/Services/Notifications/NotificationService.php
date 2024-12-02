@@ -2,7 +2,7 @@
 
 namespace App\Services\Notifications;
 
-use App\Models\DeviceMonitoringResult;
+use App\Models\TestResult;
 use App\Models\NotificationType;
 use App\Models\TestScenarioNotification;
 use Carbon\Carbon;
@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Mail;
 
 class NotificationService
 {
-    public function sendNotification(TestScenarioNotification $notification, DeviceMonitoringResult $result): void
+    public function sendNotification(TestScenarioNotification $notification, TestResult $result): void
     {
         if (! $this->shouldSendNotification($notification, $result)) {
             return;
@@ -35,7 +35,7 @@ class NotificationService
         $this->updateNotificationTimestamp($notification, $result);
     }
 
-    private function shouldSendNotification(TestScenarioNotification $notification, DeviceMonitoringResult $result): bool
+    private function shouldSendNotification(TestScenarioNotification $notification, TestResult $result): bool
     {
         if (! $notification->notificationType->is_active) {
             return false;
@@ -53,7 +53,7 @@ class NotificationService
         return true;
     }
 
-    private function sendEmailNotification(NotificationType $type, DeviceMonitoringResult $result): void
+    private function sendEmailNotification(NotificationType $type, TestResult $result): void
     {
         $config = $type->configuration;
         $recipients = $config['recipients'] ?? [];
@@ -70,6 +70,8 @@ class NotificationService
         $body .= "- Success Rate (24h): {$testScenario->success_rate_24h}%\n";
         $body .= '- Last Success: '.($testScenario->last_success_at ? $testScenario->last_success_at->diffForHumans() : 'Never')."\n";
         $body .= "- Error: {$result->error_message}\n";
+        $body .= "- Status: {$result->status->value}\n";
+        $body .= "- Execution Time: {$result->execution_time_ms}ms\n";
 
         Mail::raw($body, function ($message) use ($recipients, $subject) {
             $message->to($recipients)
@@ -77,7 +79,7 @@ class NotificationService
         });
     }
 
-    private function sendSlackNotification(NotificationType $type, DeviceMonitoringResult $result): void
+    private function sendSlackNotification(NotificationType $type, TestResult $result): void
     {
         $config = $type->configuration;
         $webhookUrl = $config['webhook_url'] ?? null;
@@ -91,13 +93,15 @@ class NotificationService
             'text' => "Test Scenario Alert: {$testScenario->name}\n".
                      "Success Rate (1h): {$testScenario->success_rate_1h}%\n".
                      "Success Rate (24h): {$testScenario->success_rate_24h}%\n".
+                     "Status: {$result->status->value}\n".
+                     "Execution Time: {$result->execution_time_ms}ms\n".
                      "Error: {$result->error_message}",
         ];
 
         Http::post($webhookUrl, $message);
     }
 
-    private function sendWebhookNotification(NotificationType $type, DeviceMonitoringResult $result): void
+    private function sendWebhookNotification(NotificationType $type, TestResult $result): void
     {
         $config = $type->configuration;
         $webhookUrl = $config['url'] ?? null;
@@ -119,15 +123,18 @@ class NotificationService
             ],
             'result' => [
                 'id' => $result->id,
+                'status' => $result->status->value,
+                'execution_time_ms' => $result->execution_time_ms,
                 'error_message' => $result->error_message,
                 'created_at' => $result->created_at,
+                'completed_at' => $result->completed_at,
             ],
         ];
 
         Http::withHeaders($headers)->send($method, $webhookUrl, ['json' => $payload]);
     }
 
-    private function updateNotificationTimestamp(TestScenarioNotification $notification, DeviceMonitoringResult $result): void
+    private function updateNotificationTimestamp(TestScenarioNotification $notification, TestResult $result): void
     {
         $notification->update([
             'last_notification_at' => now(),

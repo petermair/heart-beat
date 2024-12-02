@@ -2,9 +2,35 @@
 
 namespace App\Settings;
 
-use Spatie\LaravelSettings\Settings;
+use Illuminate\Database\Eloquent\Model;
 
-class NotificationSettings extends Settings
+/**
+ * 
+ *
+ * @property int $id
+ * @property string $name
+ * @property string|null $description
+ * @property int $notification_type_id
+ * @property string $configuration
+ * @property int $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property string|null $deleted_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereConfiguration($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereNotificationTypeId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSettings whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
+class NotificationSettings extends Model
 {
     public array $sms_numbers;
 

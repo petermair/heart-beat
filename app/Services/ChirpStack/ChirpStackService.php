@@ -5,6 +5,7 @@ namespace App\Services\ChirpStack;
 use App\Http\Integrations\ChirpStackHttp\ChirpStackHttp;
 use App\Models\Device;
 use Exception;
+use Illuminate\Support\Carbon;
 
 class ChirpStackService
 {
@@ -134,9 +135,9 @@ class ChirpStackService
     ): array {
         try {
             $response = $this->client->setBaseUrl($server)
-                ->sendDeviceMessage($applicationId, $deviceEui, [
-                    'confirmed' => $expectAck,
-                    'data' => base64_encode($payload),
+                ->deviceMessage($applicationId, $deviceEui, [
+                    'payload' => $payload,
+                    'expectAck' => $expectAck,
                 ])
                 ->json();
 
@@ -161,16 +162,18 @@ class ChirpStackService
     /**
      * Wait for a device message
      *
-     * @param  Device  $device  Device to wait for
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
      * @param  int  $timeout  Timeout in seconds
      * @return bool Success status
      */
-    public function waitForDeviceMessage(Device $device, int $timeout = 30): bool
+    public function waitForDeviceMessage(string $server, string $applicationId, string $deviceEui, int $timeout = 30): bool
     {
         try {
             $startTime = time();
             while (time() - $startTime < $timeout) {
-                $response = $this->client->getDeviceMessages($device->id);
+                $response = $this->client->getDeviceMessages($applicationId, $deviceEui);
                 if ($response->ok() && ! empty($response->json())) {
                     return true;
                 }
@@ -186,14 +189,16 @@ class ChirpStackService
     /**
      * Simulate a device uplink
      *
-     * @param  Device  $device  Device to simulate
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
      * @param  array<string, mixed>  $data  Uplink data
      * @return bool Success status
      */
-    public function simulateDeviceUplink(Device $device, array $data): bool
+    public function simulateDeviceUplink(string $server, string $applicationId, string $deviceEui, array $data): bool
     {
         try {
-            $response = $this->client->simulateUplink($device->id, $data);
+            $response = $this->client->simulateUplink($applicationId, $deviceEui, $data);
 
             return $response->ok();
         } catch (Exception $e) {
@@ -204,13 +209,15 @@ class ChirpStackService
     /**
      * Test MQTT connection
      *
-     * @param  Device  $device  Device to test
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
      * @return bool Success status
      */
-    public function testMqttConnection(Device $device): bool
+    public function testMqttConnection(string $server, string $applicationId, string $deviceEui): bool
     {
         try {
-            $response = $this->client->testMqttConnection($device->id);
+            $response = $this->client->testMqttConnection($applicationId, $deviceEui);
 
             return $response->ok();
         } catch (Exception $e) {
@@ -221,16 +228,134 @@ class ChirpStackService
     /**
      * Test HTTP connection
      *
-     * @param  Device  $device  Device to test
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
      * @return bool Success status
      */
-    public function testHttpConnection(Device $device): bool
+    public function testHttpConnection(string $server, string $applicationId, string $deviceEui): bool
     {
         try {
-            $response = $this->client->testHttpConnection($device->id);
+            $response = $this->client->testHttpConnection($applicationId, $deviceEui);
 
             return $response->ok();
         } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Wait for a device response
+     *
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
+     * @param  int  $messageId  The message ID to wait for
+     * @param  int  $timeout  Timeout in seconds
+     * @return array The wait result
+     */
+    public function waitForDeviceResponse(
+        string $server,
+        string $applicationId,
+        string $deviceEui,
+        int $messageId,
+        int $timeout = 30
+    ): array {
+        try {
+            $startTime = microtime(true);
+            $endTime = $startTime + $timeout;
+
+            while (microtime(true) < $endTime) {
+                $response = $this->client->setBaseUrl($server)
+                    ->deviceResponse($applicationId, $deviceEui, $messageId)
+                    ->json();
+
+                if (isset($response['messageId']) && $response['messageId'] === $messageId) {
+                    return [
+                        'success' => true,
+                        'response' => $response,
+                        'duration' => (microtime(true) - $startTime) * 1000,
+                    ];
+                }
+
+                // Wait a bit before next check
+                usleep(500000); // 500ms
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Timeout waiting for device response',
+                'duration' => $timeout * 1000,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'duration' => (microtime(true) - $startTime) * 1000,
+            ];
+        }
+    }
+
+    /**
+     * Send a message to a device
+     *
+     * @param  string  $server  The ChirpStack server URL
+     * @param  string  $applicationId  The application ID
+     * @param  string  $deviceEui  The device EUI
+     * @param  array  $data  Message data
+     * @return array Response from the server
+     */
+    public function sendDeviceMessage(
+        string $server,
+        string $applicationId,
+        string $deviceEui,
+        array $data
+    ): array {
+        try {
+            $response = $this->client->setBaseUrl($server)
+                ->deviceMessage($applicationId, $deviceEui, $data)
+                ->json();
+
+            return [
+                'success' => true,
+                'response' => $response,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Wait for a message at the ChirpStack endpoint
+     *
+     * @param  string  $server  ChirpStack server URL
+     * @param  string  $applicationId  Application ID
+     * @param  string  $deviceEui  Device EUI
+     * @param  int  $timeout  Timeout in seconds
+     * @return bool Success status
+     */
+    public function waitForEndpointMessage(string $server, string $applicationId, string $deviceEui, int $timeout = 30): bool
+    {
+        try {
+            // Get the latest message from the endpoint
+            $response = $this->client->setBaseUrl($server)
+                ->deviceMessages($applicationId, $deviceEui)
+                ->json();
+
+            // Check if we have any messages in the last $timeout seconds
+            $now = now();
+            foreach ($response['messages'] ?? [] as $message) {
+                $messageTime = Carbon::parse($message['timestamp']);
+                if ($messageTime->diffInSeconds($now) <= $timeout) {
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (\Exception $e) {
             return false;
         }
     }

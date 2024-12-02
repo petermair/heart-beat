@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * 
+ *
  * @property int $id
  * @property string $service_name
  * @property string|null $description
@@ -12,7 +14,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ServiceFailureFlow> $flows
  * @property-read int|null $flows_count
- *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceFailurePattern newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceFailurePattern newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceFailurePattern query()
@@ -21,7 +22,6 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceFailurePattern whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceFailurePattern whereServiceName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceFailurePattern whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class ServiceFailurePattern extends Model

@@ -16,17 +16,19 @@ Flows:
 | Service      | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |--------------|---|---|---|---|---|---|---|---|---|
 | ThingsBoard  | x | x | x | x | x | x | - | x | - |
+| MQTT TB      | x | x | x | - | x | x | - | - | - |
+| LoraTX       | x | - | x | - | - | - | - | - | - |
+| LoraRX       | - | x | x | - | - | - | - | - | - |
+| MQTT CS      | x | x | x | x | - | - | x | - | - |
 | ChirpStack   | x | x | x | x | x | - | x | - | x |
-| MQTT Broker  | x | x | x | - | - | x | x | - | - |
-| LoRa TX      | x | - | x | - | - | - | - | - | - |
-| LoRa RX      | - | x | - | x | x | - | - | - | - |
 
 Without Http:
 -------------
 | Service      | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 
 |--------------|---|---|---|---|---|---|---|
 | ThingsBoard  | x | x | x | x | x | x | - |
+| MQTT TB      | x | x | x | - | x | x | - |
+| LoraTX       | x | - | x | - | - | - | - |
+| LoraRX       | - | x | x | - | - | - | - |
+| MQTT CS      | x | x | x | x | - | - | x |
 | ChirpStack   | x | x | x | x | x | - | x |
-| MQTT Broker  | x | x | x | - | - | x | x |
-| LoRa TX      | x | - | x | - | - | - | - |
-| LoRa RX      | - | x | - | x | x | - | - |

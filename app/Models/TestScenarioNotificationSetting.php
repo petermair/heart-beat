@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * 
+ *
  * @property int $id
  * @property int $test_scenario_id
  * @property int $notification_setting_id
@@ -17,7 +19,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read \App\Models\DeviceMonitoringResult|null $lastResult
  * @property-read \App\Models\NotificationSetting|null $notificationSetting
  * @property-read \App\Models\TestScenario $testScenario
- *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotificationSetting newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotificationSetting newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotificationSetting query()
@@ -29,7 +30,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotificationSetting whereSettings($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotificationSetting whereTestScenarioId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenarioNotificationSetting whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class TestScenarioNotificationSetting extends Model

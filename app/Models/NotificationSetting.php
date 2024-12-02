@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * 
+ *
  * @property int $id
  * @property string $name
  * @property string|null $description
@@ -20,7 +22,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read \App\Models\NotificationType $notificationType
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestScenario> $testScenarios
  * @property-read int|null $test_scenarios_count
- *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting onlyTrashed()
@@ -36,7 +37,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting withTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NotificationSetting withoutTrashed()
- *
  * @mixin \Eloquent
  */
 class NotificationSetting extends Model

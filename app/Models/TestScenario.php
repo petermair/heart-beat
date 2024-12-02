@@ -2,22 +2,24 @@
 
 namespace App\Models;
 
+use App\Models\TestScenarioServiceStatus;
+use App\Models\Device;
+use App\Models\TestResult;
+use App\Enums\ServiceType;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * 
+ *
  * @property int $id
  * @property string $name
  * @property string|null $description
  * @property int|null $mqtt_device_id
  * @property int|null $http_device_id
  * @property bool $is_active
- * @property int $interval_seconds
  * @property int $timeout_seconds
- * @property int $max_retries
  * @property string|null $thingsboard_last_success_at
  * @property float $thingsboard_success_rate_1h
  * @property float $thingsboard_success_rate_24h
@@ -63,7 +65,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read int|null $service_alerts_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestScenarioServiceStatus> $serviceStatuses
  * @property-read int|null $service_statuses_count
- *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario query()
@@ -108,7 +109,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario whereThingsboardSuccessRate24h($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario whereTimeoutSeconds($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestScenario whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class TestScenario extends Model
@@ -116,22 +116,27 @@ class TestScenario extends Model
     protected $fillable = [
         'name',
         'description',
+        'test_type',
+        'device_id',
         'mqtt_device_id',
         'http_device_id',
         'is_active',
-        'interval_seconds',
         'timeout_seconds',
-        'max_retries',
+        'notification_settings',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'interval_seconds' => 'integer',
         'timeout_seconds' => 'integer',
-        'max_retries' => 'integer',
+        'notification_settings' => 'array',
     ];
 
     // Relationships
+    public function device(): BelongsTo
+    {
+        return $this->belongsTo(Device::class);
+    }
+
     public function mqttDevice(): BelongsTo
     {
         return $this->belongsTo(Device::class, 'mqtt_device_id');
@@ -147,93 +152,8 @@ class TestScenario extends Model
         return $this->hasMany(TestResult::class);
     }
 
-    public function latestResult(): HasOne
-    {
-        return $this->hasOne(TestResult::class)->latestOfMany();
-    }
-
     public function serviceStatuses(): HasMany
     {
         return $this->hasMany(TestScenarioServiceStatus::class);
-    }
-
-    public function serviceAlerts(): HasMany
-    {
-        return $this->hasMany(TestScenarioServiceAlert::class);
-    }
-
-    public function notificationSettings(): BelongsToMany
-    {
-        return $this->belongsToMany(NotificationSetting::class, 'test_scenario_notification_settings')
-            ->withPivot(['last_notification_at', 'last_result_id'])
-            ->withTimestamps();
-    }
-
-    public function notificationTypes(): BelongsToMany
-    {
-        return $this->belongsToMany(NotificationType::class, 'test_scenario_notifications')
-            ->withPivot(['warning_threshold', 'critical_threshold', 'min_downtime_minutes'])
-            ->withTimestamps();
-    }
-
-    // Service status methods
-    public function updateServiceStatus(string $serviceType, bool $success, int $executionTimeMs): void
-    {
-        $status = $this->getServiceStatus($serviceType) ?? new TestScenarioServiceStatus([
-            'test_scenario_id' => $this->id,
-            'service_type' => $serviceType,
-        ]);
-
-        $status->last_success = $success;
-        $status->last_check_at = now();
-
-        if ($success) {
-            $status->last_success_at = now();
-        }
-
-        $this->serviceStatuses()->save($status);
-    }
-
-    public function getServiceStatus(string $serviceType): ?TestScenarioServiceStatus
-    {
-        return $this->serviceStatuses()
-            ->where('service_type', $serviceType)
-            ->first();
-    }
-
-    public function hasActiveAlerts(): bool
-    {
-        return $this->serviceAlerts()
-            ->where('status', TestScenarioServiceAlert::STATUS_ACTIVE)
-            ->exists();
-    }
-
-    public function getActiveAlerts(): HasMany
-    {
-        return $this->serviceAlerts()
-            ->where('status', TestScenarioServiceAlert::STATUS_ACTIVE)
-            ->orderBy('triggered_at', 'desc');
-    }
-
-    protected static function booted()
-    {
-        static::created(function ($scenario) {
-            // Create initial service statuses for all services
-            foreach ([
-                TestScenarioServiceStatus::SERVICE_THINGSBOARD,
-                TestScenarioServiceStatus::SERVICE_CHIRPSTACK,
-                TestScenarioServiceStatus::SERVICE_MQTT,
-                TestScenarioServiceStatus::SERVICE_LORATX,
-                TestScenarioServiceStatus::SERVICE_LORARX,
-            ] as $serviceType) {
-                $scenario->serviceStatuses()->create([
-                    'service_type' => $serviceType,
-                    'status' => TestScenarioServiceStatus::STATUS_HEALTHY,
-                    'success_count_1h' => 0,
-                    'total_count_1h' => 0,
-                    'success_rate_1h' => 100,
-                ]);
-            }
-        });
     }
 }

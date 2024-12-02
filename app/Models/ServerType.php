@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * 
+ *
  * @property int $id
  * @property string $name
  * @property string $interface_class
@@ -18,7 +20,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Server> $servers
  * @property-read int|null $servers_count
- *
  * @method static \Database\Factories\ServerTypeFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServerType newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServerType newQuery()
@@ -32,7 +33,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServerType whereRequiredCredentials($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServerType whereRequiredSettings($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServerType whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class ServerType extends Model

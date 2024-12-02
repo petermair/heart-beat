@@ -3,6 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Enums\ServiceType;
+use App\Enums\StatusType;
 
 return new class extends Migration
 {
@@ -11,14 +13,8 @@ return new class extends Migration
         Schema::create('test_scenario_service_statuses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('test_scenario_id')->constrained('test_scenarios')->cascadeOnDelete();
-            $table->enum('service_type', [
-                'THINGSBOARD',
-                'CHIRPSTACK',
-                'MQTT',
-                'LORATX',
-                'LORARX',
-            ]);
-            $table->enum('status', ['HEALTHY', 'WARNING', 'CRITICAL']);
+            $table->enum('service_type', array_map(fn($case) => $case->value, ServiceType::cases()));
+            $table->enum('status', array_map(fn($case) => $case->value, StatusType::cases()));
             $table->timestamp('last_success_at')->nullable();
             $table->timestamp('last_failure_at')->nullable();
             $table->integer('success_count_1h')->default(0);

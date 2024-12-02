@@ -2,17 +2,22 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ExecuteTestScenarioJob;
 use App\Models\TestScenario;
+use App\Services\MessageFlow\FlowExecutionService;
 use Illuminate\Console\Command;
 
 class RunTestScenariosCommand extends Command
 {
     protected $signature = 'test-scenarios:run
-                          {--scenario-id= : ID of a specific test scenario to run}
-                          {--device-id= : Run all scenarios for a specific device}';
+                          {--scenario-id= : ID of a specific test scenario to run}';
 
     protected $description = 'Run test scenarios based on their configured intervals';
+
+    public function __construct(
+        private readonly FlowExecutionService $flowExecutionService
+    ) {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -24,18 +29,19 @@ class RunTestScenariosCommand extends Command
             $query->where('id', $scenarioId);
         }
 
-        // Filter by device ID if provided
-        if ($deviceId = $this->option('device-id')) {
-            $query->where('device_id', $deviceId);
-        }
-
         $scenarios = $query->get();
 
         $this->info("Found {$scenarios->count()} active test scenarios to run.");
 
         foreach ($scenarios as $scenario) {
-            $this->info("Dispatching test scenario: {$scenario->name}");
-            ExecuteTestScenarioJob::dispatch($scenario);
+            $this->info("Running test scenario: {$scenario->name}");
+            
+            try {
+                $testResult = $this->flowExecutionService->startTest($scenario);
+                $this->info("Successfully started test scenario: {$scenario->name} (Test Result ID: {$testResult->id})");
+            } catch (\Exception $e) {
+                $this->error("Failed to run test scenario {$scenario->name}: {$e->getMessage()}");
+            }
         }
 
         return self::SUCCESS;

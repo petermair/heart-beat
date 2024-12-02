@@ -3,6 +3,9 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Enums\ServiceType;
+use App\Enums\AlertType;
+use App\Enums\AlertStatus;
 
 return new class extends Migration
 {
@@ -11,26 +14,19 @@ return new class extends Migration
         Schema::create('test_scenario_service_alerts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('test_scenario_id')->constrained('test_scenarios')->cascadeOnDelete();
-            $table->enum('service_type', [
-                'THINGSBOARD',
-                'CHIRPSTACK',
-                'MQTT',
-                'LORATX',
-                'LORARX',
-            ]);
-            $table->enum('alert_type', ['CRITICAL', 'WARNING']);
-            $table->enum('status', ['ACTIVE', 'RESOLVED']);
+            $table->enum('service_type', array_map(fn($case) => $case->value, ServiceType::cases()));
+            $table->enum('alert_type', array_map(fn($case) => $case->value, AlertType::cases()));
+            $table->enum('status', array_map(fn($case) => $case->value, AlertStatus::cases()))->default(AlertStatus::ACTIVE->value);
             $table->text('message');
-            $table->timestamp('triggered_at');
-            $table->timestamp('resolved_at')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamp('started_at');
             $table->timestamp('acknowledged_at')->nullable();
-            $table->foreignId('acknowledged_by')->nullable()->constrained('users');
+            $table->timestamp('resolved_at')->nullable();
             $table->timestamps();
 
             // Indexes
-            $table->index(['test_scenario_id', 'service_type', 'status'], 'scenario_service_status_index');
-            $table->index(['test_scenario_id', 'alert_type'], 'scenario_alert_type_index');
-            $table->index(['test_scenario_id', 'triggered_at'], 'scenario_triggered_at_index');
+            $table->index(['test_scenario_id', 'service_type'], 'alert_scenario_service_index');
+            $table->index(['status', 'started_at'], 'alert_status_time_index');
         });
     }
 

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * 
+ *
  * @property int $id
  * @property string $name
  * @property int $server_type_id
@@ -26,7 +28,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $health_checks_count
  * @property-read \App\Models\MqttBroker|null $mqttBroker
  * @property-read \App\Models\ServerType $serverType
- *
  * @method static \Database\Factories\ServerFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server newQuery()
@@ -43,7 +44,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server whereSettings($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Server whereUrl($value)
- *
  * @mixin \Eloquent
  */
 class Server extends Model

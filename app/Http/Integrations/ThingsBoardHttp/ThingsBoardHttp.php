@@ -6,6 +6,7 @@ use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\CreateDeviceRequest;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceStatusRequest;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceTelemetryRequest;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\ListDevicesRequest;
+use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\SendDeviceTelemetryRequest;
 use App\Http\Integrations\ThingsBoardHttp\Requests\Rpc\DeviceRpcRequest;
 use Saloon\Contracts\Authenticator;
 use Saloon\Http\Auth\TokenAuthenticator;
@@ -124,5 +125,17 @@ class ThingsBoardHttp extends Connector
     public function createDevice(array $data)
     {
         return $this->send(new CreateDeviceRequest($data));
+    }
+
+    /**
+     * Send telemetry data
+     *
+     * @param  string  $deviceEui  Device EUI
+     * @param  array  $telemetryData  Telemetry data
+     * @return \Saloon\Http\Response Response
+     */
+    public function sendTelemetry(string $deviceEui, array $telemetryData)
+    {
+        return $this->send(new SendDeviceTelemetryRequest($deviceEui, $telemetryData));
     }
 }

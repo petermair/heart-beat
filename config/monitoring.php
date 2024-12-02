@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\ServiceType;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -69,16 +71,45 @@ return [
     |
     */
     'services' => [
-        'thingsboard' => [
+        ServiceType::THINGSBOARD->value => [
             'api_version' => env('THINGSBOARD_API_VERSION', 'v1'),
             'timeout' => env('THINGSBOARD_TIMEOUT', 30),
             'verify_ssl' => env('THINGSBOARD_VERIFY_SSL', true),
         ],
-        'chirpstack' => [
+        ServiceType::CHIRPSTACK->value => [
             'api_version' => env('CHIRPSTACK_API_VERSION', 'v3'),
             'timeout' => env('CHIRPSTACK_TIMEOUT', 30),
             'verify_ssl' => env('CHIRPSTACK_VERIFY_SSL', true),
         ],
+        ServiceType::MQTT_TB->value => [
+            'threshold' => 0.9,
+            'timeout' => 60,
+        ],
+        ServiceType::MQTT_CS->value => [
+            'threshold' => 0.9,
+            'timeout' => 60,
+        ],
+        ServiceType::LORATX->value => [
+            'threshold' => 0.9,
+            'timeout' => 60,
+        ],
+        ServiceType::LORARX->value => [
+            'threshold' => 0.9,
+            'timeout' => 60,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Status Thresholds
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for service status determination thresholds
+    |
+    */
+    'status' => [
+        'critical_downtime_minutes' => env('STATUS_CRITICAL_DOWNTIME_MINUTES', 10),
+        'warning_success_rate' => env('STATUS_WARNING_SUCCESS_RATE', 90),
     ],
 
     /*
@@ -86,7 +117,7 @@ return [
     | SSL Certificate Monitoring
     |--------------------------------------------------------------------------
     |
-    | Settings for SSL certificate monitoring.
+    | Settings for monitoring SSL certificates of the services.
     |
     */
     'ssl' => [

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Enums\ServiceType;
 
 return new class extends Migration
 {
@@ -27,13 +28,7 @@ return new class extends Migration
             $table->enum('status', ['SUCCESS', 'FAILURE', 'TIMEOUT']);
             $table->text('error_message')->nullable();
             $table->integer('execution_time_ms')->nullable();
-            $table->enum('service_type', [
-                'THINGSBOARD',
-                'CHIRPSTACK',
-                'MQTT',
-                'LORATX',
-                'LORARX',
-            ])->nullable(); // Only set when status is FAILURE
+            $table->enum('service_type', array_map(fn($case) => $case->value, ServiceType::cases()))->nullable(); // Only set when status is FAILURE
             $table->timestamps();
 
             // Indexes

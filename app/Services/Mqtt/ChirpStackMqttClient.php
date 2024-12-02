@@ -123,7 +123,7 @@ class ChirpStackMqttClient extends MqttClient
         });
     }
 
-    public function sendDownlink(string $deviceEui, array $data, int $fPort = 2, bool $confirm = true): void
+    public function sendDownlink(string $deviceEui, array $data, int $fPort = 1, bool $confirm = true): void
     {
         $payload = [
             'deviceQueueItem' => [

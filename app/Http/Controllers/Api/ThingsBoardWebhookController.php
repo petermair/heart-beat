@@ -3,55 +3,66 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\Mqtt\ChirpStackMqttClient;
-use App\Services\Mqtt\ThingsBoardMessageDto;
+use App\Models\TestResult;
+use App\Services\MessageFlow\MessageFlowStatusService;
+use App\Enums\TestResultStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ThingsBoardWebhookController extends Controller
 {
-    public function handleRpc(Request $request)
+    private MessageFlowStatusService $messageFlowStatusService;
+
+    public function __construct(MessageFlowStatusService $messageFlowStatusService) 
+    {
+        $this->messageFlowStatusService = $messageFlowStatusService;
+    }
+
+    public function handle(Request $request): JsonResponse
     {
         // Validate the webhook payload
+        // f001digitalinput1 = flowType
+        // f001unsigned4b2 = monitoringResult->id
+        // f001unsigned4b3 = sendTime
         $validated = $request->validate([
-            'deviceName' => 'required|string',
-            'deviceId' => 'required|string',
-            'method' => 'required|string',
             'params' => 'required|array',
-            'requestId' => 'required|string',
+            'params.f001digitalinput1' => 'required|integer',
+            'params.f001unsigned4b2' => 'required|integer',
+            'params.f001unsigned4b3' => 'required|integer'
         ]);
-
-        // Create message DTO
-        $message = ThingsBoardMessageDto::fromRpc([
-            'deviceName' => $validated['deviceName'],
-            'method' => $validated['method'],
-            'params' => $validated['params'],
-        ]);
-
-        // Get the device and forward to ChirpStack
-        $device = Device::where('thingsboard_device_id', $validated['deviceId'])->first();
-        if (!$device) {
-            return response()->json(['error' => 'Device not found'], Response::HTTP_NOT_FOUND);
-        }
 
         try {
-            $chirpstackClient = new ChirpStackMqttClient($device);
-            $chirpstackClient->connect();
-            $chirpstackClient->sendDownlink(
-                $device->credentials['chirpstack_device_eui'],
-                $message->params,
-                2, // Use fPort 2 for commands
-                true // Require confirmation
-            );
-            $chirpstackClient->disconnect();
+            // Find the test result
+            $testResult = TestResult::find($validated['params']['f001unsigned4b2']);
+            if (!$testResult) {
+                return response()->json(['error' => 'Test result not found'], Response::HTTP_NOT_FOUND);
+            }
 
-            return response()->json(['status' => 'success']);
+            // Calculate response time
+            $responseTime = time() - $validated['params']['f001unsigned4b3'];
+            
+            // Update message flow status
+            $messageFlow = $testResult->messageFlows()
+                ->where('flow_number', $validated['params']['f001digitalinput1'])
+                ->first();
+                
+            if ($messageFlow) {
+                $messageFlow->update([
+                    'status' => TestResultStatus::SUCCESS,
+                    'completed_at' => now(),
+                    'response_time_ms' => $responseTime
+                ]);
+            }
+            
+            // Process message flows and update service statuses
+            $this->messageFlowStatusService->processTestResult($testResult);
+
+            return response()->json(['responseTime' => $responseTime]);
         } catch (\Exception $e) {
-            report($e);
-            return response()->json(
-                ['error' => 'Failed to forward message to ChirpStack'],
-                Response::HTTP_INTERNAL_SERVER_ERROR
-            );
+            return response()->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
+
+    
 }

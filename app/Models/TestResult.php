@@ -2,27 +2,31 @@
 
 namespace App\Models;
 
+use App\Enums\FlowType;
+use App\Enums\ServiceType;
+use App\Enums\TestResultStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * 
+ *
  * @property int $id
  * @property int $test_scenario_id
  * @property int $device_id
- * @property string $flow_type
+ * @property FlowType $flow_type
  * @property \Illuminate\Support\Carbon $start_time
  * @property \Illuminate\Support\Carbon|null $end_time
- * @property string $status
+ * @property TestResultStatus $status
  * @property string|null $error_message
  * @property float|null $execution_time_ms
- * @property string|null $service_type
+ * @property ServiceType $service_type
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read Device|null $device
  * @property-read float $success_rate
  * @property-read Device|null $httpDevice
  * @property-read TestScenario $testScenario
- *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult query()
@@ -38,55 +42,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereTestScenarioId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TestResult whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class TestResult extends Model
 {
-    // Statuses
-    public const STATUS_SUCCESS = 'SUCCESS';
-
-    public const STATUS_FAILURE = 'FAILURE';
-
-    // Flow Types
-    public const FLOW_FULL_ROUTE_1 = 'FULL_ROUTE_1';
-
-    public const FLOW_ONE_WAY_ROUTE = 'ONE_WAY_ROUTE';
-
-    public const FLOW_TWO_WAY_ROUTE = 'TWO_WAY_ROUTE';
-
-    public const FLOW_DIRECT_TEST_1 = 'DIRECT_TEST_1';
-
-    public const FLOW_DIRECT_TEST_2 = 'DIRECT_TEST_2';
-
-    public const FLOW_TB_MQTT_HEALTH = 'TB_MQTT_HEALTH';
-
-    public const FLOW_CS_MQTT_HEALTH = 'CS_MQTT_HEALTH';
-
-    public const FLOW_TB_HTTP_HEALTH = 'TB_HTTP_HEALTH';
-
-    public const FLOW_CS_HTTP_HEALTH = 'CS_HTTP_HEALTH';
-
-    // Service Types
-    public const SERVICE_THINGSBOARD = 'THINGSBOARD';
-
-    public const SERVICE_CHIRPSTACK = 'CHIRPSTACK';
-
-    public const SERVICE_MQTT = 'MQTT';
-
-    public const SERVICE_LORATX = 'LORATX';
-
-    public const SERVICE_LORARX = 'LORARX';
-
-    public const SERVICE_UNKNOWN = 'UNKNOWN';
-
     protected $fillable = [
         'test_scenario_id',
+        'device_id',
         'flow_type',
-        'status',
-        'error_message',
         'start_time',
         'end_time',
+        'status',
+        'error_message',
         'execution_time_ms',
         'service_type',
     ];
@@ -94,6 +61,9 @@ class TestResult extends Model
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'status' => TestResultStatus::class,
+        'flow_type' => FlowType::class,
+        'service_type' => ServiceType::class,
         'execution_time_ms' => 'float',
     ];
 
@@ -102,94 +72,44 @@ class TestResult extends Model
         return $this->belongsTo(TestScenario::class);
     }
 
-    public function device()
+    public function device(): BelongsTo
     {
-        // Test results are always associated with the MQTT device
-        return $this->hasOneThrough(
-            Device::class,
-            TestScenario::class,
-            'id', // Foreign key on test_scenarios table...
-            'id', // Foreign key on devices table...
-            'test_scenario_id', // Local key on test_results table...
-            'mqtt_device_id' // Local key on test_scenarios table...
-        );
+        return $this->belongsTo(Device::class);
     }
 
-    public function httpDevice()
+    public function isSuccessful(): bool
     {
-        // For HTTP tests, we can also access the HTTP device
-        return $this->hasOneThrough(
-            Device::class,
-            TestScenario::class,
-            'id', // Foreign key on test_scenarios table...
-            'id', // Foreign key on devices table...
-            'test_scenario_id', // Local key on test_results table...
-            'http_device_id' // Local key on test_scenarios table...
-        );
+        return $this->status === TestResultStatus::SUCCESS;
     }
 
-    // Helper methods
-    public function isSuccess(): bool
+    public function isFailed(): bool
     {
-        return $this->status === self::STATUS_SUCCESS;
-    }
-
-    public function isFailure(): bool
-    {
-        return $this->status === self::STATUS_FAILURE;
+        return $this->status === TestResultStatus::FAILURE;
     }
 
     public function getSuccessRateAttribute(): float
     {
-        return $this->status === self::STATUS_SUCCESS ? 100.0 : 0.0;
+        return $this->status === TestResultStatus::SUCCESS ? 100.0 : 0.0;
     }
 
     public function getStatusList(): array
     {
-        return [
-            self::STATUS_SUCCESS => 'Success',
-            self::STATUS_FAILURE => 'Failure',
-        ];
+        return collect(TestResultStatus::cases())
+            ->mapWithKeys(fn ($status) => [$status->value => $status->label()])
+            ->toArray();
     }
 
     public function getFlowTypeList(): array
     {
-        return [
-            self::FLOW_FULL_ROUTE_1 => 'Full Route 1 (TB → CS)',
-            self::FLOW_ONE_WAY_ROUTE => 'One-way Route (CS → TB)',
-            self::FLOW_TWO_WAY_ROUTE => 'Two-way Route (CS → TB → CS)',
-            self::FLOW_DIRECT_TEST_1 => 'Direct Test 1 (CS → TB)',
-            self::FLOW_DIRECT_TEST_2 => 'Direct Test 2 (TB → CS)',
-            self::FLOW_TB_MQTT_HEALTH => 'ThingsBoard MQTT Health',
-            self::FLOW_CS_MQTT_HEALTH => 'ChirpStack MQTT Health',
-            self::FLOW_TB_HTTP_HEALTH => 'ThingsBoard HTTP Health',
-            self::FLOW_CS_HTTP_HEALTH => 'ChirpStack HTTP Health',
-        ];
+        return collect(FlowType::cases())
+            ->mapWithKeys(fn ($type) => [$type->value => $type->label()])
+            ->toArray();
     }
 
     public function getServiceTypeList(): array
     {
-        return [
-            self::SERVICE_THINGSBOARD => 'ThingsBoard',
-            self::SERVICE_CHIRPSTACK => 'ChirpStack',
-            self::SERVICE_MQTT => 'MQTT Broker',
-            self::SERVICE_LORATX => 'LoRa TX',
-            self::SERVICE_LORARX => 'LoRa RX',
-            self::SERVICE_UNKNOWN => 'Unknown',
-        ];
-    }
-
-    protected static function booted()
-    {
-        static::created(function ($testResult) {
-            // Update the test scenario's service status when a new result is created
-            if ($testResult->service_type) {
-                $testResult->testScenario->updateServiceStatus(
-                    $testResult->service_type,
-                    $testResult->isSuccess(),
-                    $testResult->execution_time_ms
-                );
-            }
-        });
+        return collect(ServiceType::cases())
+            ->mapWithKeys(fn ($type) => [$type->value => $type->label()])
+            ->toArray();
     }
 }

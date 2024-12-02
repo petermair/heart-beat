@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ServiceType;
+use App\Enums\StatusType;
 use App\Filament\Resources\TestScenarioResource\Pages;
 use App\Jobs\ExecuteTestScenarioJob;
 use App\Models\TestScenario;
@@ -55,16 +57,16 @@ class TestScenarioResource extends Resource
                         Forms\Components\Toggle::make('is_active')
                             ->required()
                             ->default(true),
+                        Forms\Components\TextInput::make('interval_seconds')
+                            ->required()
+                            ->numeric()
+                            ->default(300)
+                            ->minValue(30)
+                            ->step(30),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Test Schedule')
                     ->schema([
-                        Forms\Components\TextInput::make('interval_seconds')
-                            ->label('Test Interval (seconds)')
-                            ->numeric()
-                            ->default(300)
-                            ->required()
-                            ->helperText('How often to run the tests'),
                         Forms\Components\TextInput::make('timeout_seconds')
                             ->label('Timeout (seconds)')
                             ->numeric()
@@ -101,11 +103,12 @@ class TestScenarioResource extends Resource
                 Tables\Columns\TextColumn::make('thingsboard_status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'HEALTHY' => 'success',
-                        'WARNING' => 'warning',
-                        'CRITICAL' => 'danger',
+                        StatusType::HEALTHY->value => 'success',
+                        StatusType::WARNING->value => 'warning',
+                        StatusType::CRITICAL->value => 'danger',
                         default => 'gray'
-                    }),
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
                 Tables\Columns\TextColumn::make('thingsboard_success_rate_1h')
                     ->label('TB 1h')
                     ->numeric(2)
@@ -119,11 +122,12 @@ class TestScenarioResource extends Resource
                 Tables\Columns\TextColumn::make('chirpstack_status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'HEALTHY' => 'success',
-                        'WARNING' => 'warning',
-                        'CRITICAL' => 'danger',
+                        StatusType::HEALTHY->value => 'success',
+                        StatusType::WARNING->value => 'warning',
+                        StatusType::CRITICAL->value => 'danger',
                         default => 'gray'
-                    }),
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
                 Tables\Columns\TextColumn::make('chirpstack_success_rate_1h')
                     ->label('CS 1h')
                     ->numeric(2)
@@ -137,11 +141,12 @@ class TestScenarioResource extends Resource
                 Tables\Columns\TextColumn::make('mqtt_status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'HEALTHY' => 'success',
-                        'WARNING' => 'warning',
-                        'CRITICAL' => 'danger',
+                        StatusType::HEALTHY->value => 'success',
+                        StatusType::WARNING->value => 'warning',
+                        StatusType::CRITICAL->value => 'danger',
                         default => 'gray'
-                    }),
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
                 Tables\Columns\TextColumn::make('mqtt_success_rate_1h')
                     ->label('MQTT 1h')
                     ->numeric(2)
@@ -165,22 +170,40 @@ class TestScenarioResource extends Resource
                 // Service Status Filters
                 Tables\Filters\SelectFilter::make('thingsboard_status')
                     ->options([
-                        'HEALTHY' => 'Healthy',
-                        'WARNING' => 'Warning',
-                        'CRITICAL' => 'Critical',
-                    ]),
+                        StatusType::HEALTHY->value => StatusType::HEALTHY->label(),
+                        StatusType::WARNING->value => StatusType::WARNING->label(),
+                        StatusType::CRITICAL->value => StatusType::CRITICAL->label(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $status): Builder => $query->where('thingsboard_status', $status)
+                        );
+                    }),
                 Tables\Filters\SelectFilter::make('chirpstack_status')
                     ->options([
-                        'HEALTHY' => 'Healthy',
-                        'WARNING' => 'Warning',
-                        'CRITICAL' => 'Critical',
-                    ]),
+                        StatusType::HEALTHY->value => StatusType::HEALTHY->label(),
+                        StatusType::WARNING->value => StatusType::WARNING->label(),
+                        StatusType::CRITICAL->value => StatusType::CRITICAL->label(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $status): Builder => $query->where('chirpstack_status', $status)
+                        );
+                    }),
                 Tables\Filters\SelectFilter::make('mqtt_status')
                     ->options([
-                        'HEALTHY' => 'Healthy',
-                        'WARNING' => 'Warning',
-                        'CRITICAL' => 'Critical',
-                    ]),
+                        StatusType::HEALTHY->value => StatusType::HEALTHY->label(),
+                        StatusType::WARNING->value => StatusType::WARNING->label(),
+                        StatusType::CRITICAL->value => StatusType::CRITICAL->label(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $status): Builder => $query->where('mqtt_status', $status)
+                        );
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

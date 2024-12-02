@@ -20,6 +20,7 @@ use App\Models\TestScenarioNotification;
 use App\Models\TestScenarioNotificationSetting;
 use App\Models\TestScenarioServiceAlert;
 use App\Models\TestScenarioServiceStatus;
+use App\Enums\ServiceType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -48,240 +49,46 @@ class StagingSeeder extends Seeder
         MqttBroker::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Create MQTT Brokers
-        $mqttBrokers = [
-            'ThingsBoard MQTT' => MqttBroker::create([
-                'name' => 'ThingsBoard MQTT',
-                'host' => 'mqtt.thingsboard.cloud',
-                'port' => 1883,
-                'username' => 'mqtt_user',
-                'password' => Hash::make('mqtt_password'),
-                'ssl_enabled' => false,
-            ]),
-            'ChirpStack MQTT' => MqttBroker::create([
-                'name' => 'ChirpStack MQTT',
-                'host' => 'mqtt.chirpstack.io',
-                'port' => 8883,
-                'username' => 'chirpstack_mqtt',
-                'password' => Hash::make('chirpstack_password'),
-                'ssl_enabled' => true,
-            ]),
-        ];
-
         // Create Server Types
         $serverTypes = [
             'ThingsBoard' => ServerType::create([
                 'name' => 'ThingsBoard',
-                'interface_class' => 'App\Services\ThingsBoard\ThingsBoardService',
-                'description' => 'ThingsBoard IoT Platform',
-                'required_settings' => ['timeout', 'retry_attempts'],
-                'required_credentials' => ['username', 'password'],
+                'interface_class' => 'App\\Services\\Monitoring\\ThingsBoardMonitor',
+                'description' => 'ThingsBoard IoT Platform monitoring',
+                'required_settings' => json_encode(['api_endpoint']),
+                'required_credentials' => json_encode(['username', 'password']),
             ]),
             'ChirpStack' => ServerType::create([
                 'name' => 'ChirpStack',
-                'interface_class' => 'App\Services\ChirpStack\ChirpStackService',
-                'description' => 'ChirpStack LoRaWAN Network Server',
-                'required_settings' => ['timeout', 'retry_attempts'],
-                'required_credentials' => ['api_key'],
+                'interface_class' => 'App\\Services\\Monitoring\\ChirpStackMonitor',
+                'description' => 'ChirpStack LoRaWAN Network Server monitoring',
+                'required_settings' => json_encode(['grpc_endpoint', 'api_endpoint']),
+                'required_credentials' => json_encode(['api_token']),
             ]),
         ];
-
-        // Create Servers
-        $servers = [
-            'ThingsBoard Cloud' => Server::create([
-                'name' => 'ThingsBoard Cloud',
-                'server_type_id' => $serverTypes['ThingsBoard']->id,
-                'mqtt_broker_id' => $mqttBrokers['ThingsBoard MQTT']->id,
-                'url' => 'https://thingsboard.cloud',
-                'description' => 'ThingsBoard Cloud Instance',
-                'monitoring_interval' => 60,
-                'is_active' => true,
-                'credentials' => [
-                    'username' => 'admin',
-                    'password' => Hash::make('admin123'),
-                ],
-                'settings' => [
-                    'timeout' => 30,
-                    'retry_attempts' => 3,
-                ],
-            ]),
-            'ChirpStack Cloud' => Server::create([
-                'name' => 'ChirpStack Cloud',
-                'server_type_id' => $serverTypes['ChirpStack']->id,
-                'mqtt_broker_id' => $mqttBrokers['ChirpStack MQTT']->id,
-                'url' => 'https://chirpstack.io',
-                'description' => 'ChirpStack Cloud Instance',
-                'monitoring_interval' => 60,
-                'is_active' => true,
-                'credentials' => [
-                    'api_key' => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9',
-                ],
-                'settings' => [
-                    'timeout' => 30,
-                    'retry_attempts' => 3,
-                ],
-            ]),
-        ];
-
-        // Create Communication Types
-        $communicationTypes = [
-            'LoRaWAN' => CommunicationType::create([
-                'name' => 'lorawan',
-                'label' => 'LoRaWAN',
-                'description' => 'Long Range Wide Area Network',
-                'is_active' => true,
-            ]),
-            'WiFi' => CommunicationType::create([
-                'name' => 'wifi',
-                'label' => 'WiFi',
-                'description' => 'Wireless Local Area Network',
-                'is_active' => true,
-            ]),
-        ];
-
-        // Create Devices
-        $devices = [];
-        for ($i = 1; $i <= 5; $i++) {
-            $devices[] = Device::create([
-                'name' => "Test Device $i",
-                'description' => "Test Device $i Description",
-                'thingsboard_server_id' => $servers['ThingsBoard Cloud']->id,
-                'chirpstack_server_id' => $servers['ChirpStack Cloud']->id,
-                'application_id' => '1',
-                'device_profile_id' => '1',
-                'device_eui' => sprintf('a81758fffe03%04d', $i),
-                'communication_type_id' => $communicationTypes['LoRaWAN']->id,
-                'is_active' => true,
-                'last_seen_at' => now(),
-                'monitoring_enabled' => true,
-            ]);
-        }
-
-        // Create Test Scenarios
-        $testScenarios = [];
-        foreach ($devices as $device) {
-            $testScenarios[] = TestScenario::create([
-                'name' => "Test Scenario for {$device->name}",
-                'description' => "Monitoring scenario for {$device->name}",
-                'mqtt_device_id' => $device->id,
-                'http_device_id' => $device->id,
-                'is_active' => true,
-                'interval_seconds' => 300, // 5 minutes
-                'timeout_seconds' => 30,
-                'max_retries' => 3,
-                // Initial statistics
-                'thingsboard_success_rate_1h' => 95.5,
-                'thingsboard_success_rate_24h' => 97.8,
-                'thingsboard_messages_count_1h' => 12,
-                'thingsboard_messages_count_24h' => 288,
-                'thingsboard_status' => 'HEALTHY',
-                'chirpstack_success_rate_1h' => 94.2,
-                'chirpstack_success_rate_24h' => 96.5,
-                'chirpstack_messages_count_1h' => 12,
-                'chirpstack_messages_count_24h' => 288,
-                'chirpstack_status' => 'HEALTHY',
-                'mqtt_success_rate_1h' => 96.8,
-                'mqtt_success_rate_24h' => 98.2,
-                'mqtt_messages_count_1h' => 12,
-                'mqtt_messages_count_24h' => 288,
-                'mqtt_status' => 'HEALTHY',
-            ]);
-        }
-
-        // Create Test Results
-        foreach ($testScenarios as $scenario) {
-            for ($i = 1; $i <= 10; $i++) {
-                $isMqtt = $i <= 7;
-                $flowType = $isMqtt ? TestResult::FLOW_TB_MQTT_HEALTH : TestResult::FLOW_TB_HTTP_HEALTH;
-                $status = rand(1, 10) > 2 ? TestResult::STATUS_SUCCESS : TestResult::STATUS_FAILURE;
-                TestResult::create([
-                    'test_scenario_id' => $scenario->id,
-                    'device_id' => $isMqtt ? $scenario->mqtt_device_id : $scenario->http_device_id,
-                    'flow_type' => $flowType,
-                    'status' => $status,
-                    'error_message' => null,
-                    'start_time' => now()->subMinutes($i * 5),
-                    'end_time' => now()->subMinutes($i * 5)->addSeconds(rand(1, 5)),
-                    'execution_time_ms' => rand(100, 5000),
-                ]);
-            }
-        }
-
-        // Create Device Monitoring Results
-        foreach ($devices as $device) {
-            for ($i = 1; $i <= 10; $i++) {
-                DeviceMonitoringResult::create([
-                    'device_id' => $device->id,
-                    'test_scenario_id' => $testScenarios[array_rand($testScenarios)]->id,
-                    'success' => rand(1, 10) > 2, // 80% success rate
-                    'error_message' => null,
-                    'response_time_ms' => rand(100, 5000),
-                    'metadata' => [
-                        'flow_number' => rand(1, 9),
-                        'timestamp' => now()->subMinutes($i * 5)->timestamp,
-                        'counter' => $i,
-                    ],
-                ]);
-            }
-        }
-
-        // Create Health Checks
-        foreach ($servers as $server) {
-            for ($i = 1; $i <= 5; $i++) {
-                $isHealthy = rand(1, 10) > 2;
-                HealthCheck::create([
-                    'server_id' => $server->id,
-                    'status' => $isHealthy ? 'HEALTHY' : 'UNHEALTHY',
-                    'response_time' => $isHealthy ? rand(50, 500) : null,
-                    'error_message' => $isHealthy ? null : 'Connection timeout',
-                    'checked_at' => now()->subMinutes($i * 5),
-                ]);
-            }
-        }
-
-        // Create Alert Rules
-        foreach ($servers as $server) {
-            AlertRule::create([
-                'server_id' => $server->id,
-                'name' => "Response Time Alert for {$server->name}",
-                'description' => 'Alert when response time exceeds threshold',
-                'conditions' => [
-                    [
-                        'metric' => 'response_time',
-                        'operator' => '>',
-                        'value' => 1000,
-                    ],
-                ],
-                'actions' => [
-                    [
-                        'type' => 'email',
-                        'to' => 'admin@example.com',
-                        'subject' => 'High Response Time Alert',
-                    ],
-                ],
-                'is_active' => true,
-            ]);
-        }
 
         // Create Notification Types
         NotificationType::create([
             'name' => 'email',
             'display_name' => 'Email',
-            'description' => 'Email notifications',
+            'description' => 'Send notifications via email',
             'configuration_schema' => [
-                'type' => 'object',
+                'required' => ['recipients'],
                 'properties' => [
-                    'to' => [
-                        'type' => 'string',
-                        'format' => 'email',
-                        'title' => 'Recipient Email',
+                    'recipients' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'string',
+                            'format' => 'email',
+                        ],
+                        'minItems' => 1,
                     ],
-                    'subject' => [
-                        'type' => 'string',
-                        'title' => 'Email Subject',
+                    'min_interval' => [
+                        'type' => 'integer',
+                        'minimum' => 60,
+                        'default' => 300,
                     ],
                 ],
-                'required' => ['to'],
             ],
             'is_active' => true,
         ]);
@@ -289,24 +96,29 @@ class StagingSeeder extends Seeder
         NotificationType::create([
             'name' => 'webhook',
             'display_name' => 'Webhook',
-            'description' => 'HTTP webhook notifications',
+            'description' => 'Send notifications to a custom webhook',
             'configuration_schema' => [
                 'type' => 'object',
                 'properties' => [
                     'url' => [
                         'type' => 'string',
                         'format' => 'uri',
-                        'title' => 'Webhook URL',
                     ],
                     'method' => [
                         'type' => 'string',
-                        'enum' => ['POST', 'PUT'],
+                        'enum' => ['GET', 'POST', 'PUT', 'PATCH'],
                         'default' => 'POST',
-                        'title' => 'HTTP Method',
                     ],
                     'headers' => [
                         'type' => 'object',
-                        'title' => 'HTTP Headers',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                    'min_interval' => [
+                        'type' => 'integer',
+                        'minimum' => 60,
+                        'default' => 300,
                     ],
                 ],
                 'required' => ['url'],
@@ -314,94 +126,244 @@ class StagingSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Create Notification Settings
-        foreach (NotificationType::all() as $type) {
-            NotificationSetting::create([
-                'notification_type_id' => $type->id,
-                'name' => "{$type->display_name} Settings",
-                'description' => "Default settings for {$type->display_name} notifications",
-                'configuration' => $type->name === 'email' ? [
-                    'to' => ['admin@example.com'],
-                    'subject' => 'Test Notification',
-                ] : [
-                    'url' => 'https://example.com/webhook',
-                    'method' => 'POST',
-                    'headers' => [
-                        'Content-Type' => 'application/json',
+        NotificationType::create([
+            'name' => 'slack',
+            'display_name' => 'Slack',
+            'description' => 'Send notifications to Slack',
+            'configuration_schema' => [
+                'type' => 'object',
+                'properties' => [
+                    'webhook_url' => [
+                        'type' => 'string',
+                        'format' => 'uri',
+                    ],
+                    'min_interval' => [
+                        'type' => 'integer',
+                        'minimum' => 60,
+                        'default' => 300,
                     ],
                 ],
-                'is_active' => true,
-            ]);
-        }
+                'required' => ['webhook_url'],
+            ],
+            'is_active' => true,
+        ]);
 
         // Create Service Failure Patterns
-        ServiceFailurePattern::create([
-            'service_name' => 'HTTP Request',
-            'description' => 'Request timeout pattern',
-        ]);
+        $patterns = [
+            [
+                'service_name' => ServiceType::THINGSBOARD->label(),
+                'description' => 'Failure pattern when ThingsBoard is down',
+                'flows' => [
+                    1 => ['fails' => true,  'is_optional' => false],
+                    2 => ['fails' => true,  'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => true,  'is_optional' => false],
+                    5 => ['fails' => true,  'is_optional' => false],
+                    6 => ['fails' => true,  'is_optional' => false],
+                    7 => ['fails' => false, 'is_optional' => false],
+                    8 => ['fails' => true,  'is_optional' => true],
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
+            ],
+            [
+                'service_name' => ServiceType::CHIRPSTACK->label(),
+                'description' => 'Failure pattern when ChirpStack is down',
+                'flows' => [
+                    1 => ['fails' => true,  'is_optional' => false],
+                    2 => ['fails' => true,  'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => true,  'is_optional' => false],
+                    5 => ['fails' => true,  'is_optional' => false],
+                    6 => ['fails' => false, 'is_optional' => false],
+                    7 => ['fails' => true,  'is_optional' => false],
+                    8 => ['fails' => false, 'is_optional' => true],
+                    9 => ['fails' => true,  'is_optional' => true],
+                ],
+            ],
+            [
+                'service_name' => ServiceType::MQTT_TB->label(),
+                'description' => 'Failure pattern when MQTT TB is down',
+                'flows' => [
+                    1 => ['fails' => true,  'is_optional' => false],
+                    2 => ['fails' => true,  'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => false, 'is_optional' => false],
+                    5 => ['fails' => true,  'is_optional' => false],
+                    6 => ['fails' => true,  'is_optional' => false],
+                    7 => ['fails' => false, 'is_optional' => false],
+                    8 => ['fails' => false, 'is_optional' => true],
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
+            ],
+            [
+                'service_name' => ServiceType::MQTT_CS->label(),
+                'description' => 'Failure pattern when MQTT CS is down',
+                'flows' => [
+                    1 => ['fails' => true,  'is_optional' => false],
+                    2 => ['fails' => true,  'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => true,  'is_optional' => false],
+                    5 => ['fails' => false, 'is_optional' => false],
+                    6 => ['fails' => false, 'is_optional' => false],
+                    7 => ['fails' => true,  'is_optional' => false],
+                    8 => ['fails' => false, 'is_optional' => true],
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
+            ],
+            [
+                'service_name' => ServiceType::LORATX->label(),
+                'description' => 'Failure pattern when LoRa TX is down',
+                'flows' => [
+                    1 => ['fails' => true,  'is_optional' => false],
+                    2 => ['fails' => false, 'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => false, 'is_optional' => false],
+                    5 => ['fails' => false, 'is_optional' => false],
+                    6 => ['fails' => false, 'is_optional' => false],
+                    7 => ['fails' => false, 'is_optional' => false],
+                    8 => ['fails' => false, 'is_optional' => true],
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
+            ],
+            [
+                'service_name' => ServiceType::LORARX->label(),
+                'description' => 'Failure pattern when LoRa RX is down',
+                'flows' => [
+                    1 => ['fails' => false, 'is_optional' => false],
+                    2 => ['fails' => true,  'is_optional' => false],
+                    3 => ['fails' => true,  'is_optional' => false],
+                    4 => ['fails' => false, 'is_optional' => false],
+                    5 => ['fails' => false, 'is_optional' => false],
+                    6 => ['fails' => false, 'is_optional' => false],
+                    7 => ['fails' => false, 'is_optional' => false],
+                    8 => ['fails' => false, 'is_optional' => true],
+                    9 => ['fails' => false, 'is_optional' => true],
+                ],
+            ],
+        ];
 
-        ServiceFailurePattern::create([
-            'service_name' => 'Database',
-            'description' => 'Database connection error pattern',
-        ]);
-
-        ServiceFailurePattern::create([
-            'service_name' => 'MQTT',
-            'description' => 'MQTT connection error pattern',
-        ]);
-
-        // Create Service Failure Flows
-        foreach (ServiceFailurePattern::all() as $pattern) {
-            ServiceFailureFlow::create([
-                'pattern_id' => $pattern->id,
-                'flow_number' => rand(1, 9),
-                'fails' => true,
-                'is_optional' => false,
+        foreach ($patterns as $patternData) {
+            $pattern = ServiceFailurePattern::create([
+                'service_name' => $patternData['service_name'],
+                'description' => $patternData['description'],
             ]);
-        }
 
-        // Create Test Scenario Service Statuses
-        foreach ($testScenarios as $scenario) {
-            foreach ([
-                TestScenarioServiceStatus::SERVICE_THINGSBOARD,
-                TestScenarioServiceStatus::SERVICE_CHIRPSTACK,
-                TestScenarioServiceStatus::SERVICE_MQTT,
-                TestScenarioServiceStatus::SERVICE_LORATX,
-                TestScenarioServiceStatus::SERVICE_LORARX,
-            ] as $serviceType) {
-                TestScenarioServiceStatus::create([
-                    'test_scenario_id' => $scenario->id,
-                    'service_type' => $serviceType,
-                    'status' => TestScenarioServiceStatus::STATUS_HEALTHY,
-                    'success_count_1h' => rand(0, 100),
-                    'total_count_1h' => 100,
-                    'success_rate_1h' => rand(0, 100),
+            foreach ($patternData['flows'] as $flowNumber => $flowData) {
+                ServiceFailureFlow::create([
+                    'pattern_id' => $pattern->id,
+                    'flow_number' => $flowNumber,
+                    'fails' => $flowData['fails'],
+                    'is_optional' => $flowData['is_optional'],
                 ]);
             }
         }
 
-        // Create Test Scenario Service Alerts
-        foreach ($testScenarios as $scenario) {
-            foreach ([
-                TestScenarioServiceStatus::SERVICE_THINGSBOARD,
-                TestScenarioServiceStatus::SERVICE_CHIRPSTACK,
-                TestScenarioServiceStatus::SERVICE_MQTT,
-                TestScenarioServiceStatus::SERVICE_LORATX,
-                TestScenarioServiceStatus::SERVICE_LORARX,
-            ] as $serviceType) {
-                if (rand(0, 1)) { // 50% chance of having an alert
-                    TestScenarioServiceAlert::create([
-                        'test_scenario_id' => $scenario->id,
-                        'service_type' => $serviceType,
-                        'alert_type' => rand(0, 1) ? 'WARNING' : 'CRITICAL',
-                        'status' => rand(0, 1) ? 'ACTIVE' : 'RESOLVED',
-                        'message' => 'Service response time exceeds threshold',
-                        'triggered_at' => now()->subHours(rand(1, 24)),
-                        'resolved_at' => rand(0, 1) ? now() : null,
-                        'acknowledged_at' => rand(0, 1) ? now() : null,
-                    ]);
-                }
-            }
+        // Create Test Scenarios
+        $scenarios = [
+            [
+                'name' => 'Full Route 1 (TB → CS)',
+                'description' => 'ThingsBoard → MQTT TB → LoraTX → MQTT CS → ChirpStack',
+                'flow_number' => 1,
+                'dependencies' => [
+                    'thingsboard' => true,
+                    'mqtt_tb' => true,
+                    'lora_tx' => true,
+                    'mqtt_cs' => true,
+                    'chirpstack' => true,
+                ],
+            ],
+            [
+                'name' => 'One Way Route (CS → TB)',
+                'description' => 'ChirpStack → MQTT CS → LoraRX → MQTT TB → ThingsBoard',
+                'flow_number' => 2,
+                'dependencies' => [
+                    'chirpstack' => true,
+                    'mqtt_cs' => true,
+                    'lora_rx' => true,
+                    'mqtt_tb' => true,
+                    'thingsboard' => true,
+                ],
+            ],
+            [
+                'name' => 'Two Way Route',
+                'description' => 'Complete round trip testing all components',
+                'flow_number' => 3,
+                'dependencies' => [
+                    'thingsboard' => true,
+                    'mqtt_tb' => true,
+                    'lora_tx' => true,
+                    'lora_rx' => true,
+                    'mqtt_cs' => true,
+                    'chirpstack' => true,
+                ],
+            ],
+            [
+                'name' => 'Direct Test 1 (CS → TB)',
+                'description' => 'ChirpStack → MQTT CS → ThingsBoard',
+                'flow_number' => 4,
+                'dependencies' => [
+                    'chirpstack' => true,
+                    'mqtt_cs' => true,
+                    'thingsboard' => true,
+                ],
+            ],
+            [
+                'name' => 'Direct Test 2 (TB → CS)',
+                'description' => 'ThingsBoard → MQTT TB → ChirpStack',
+                'flow_number' => 5,
+                'dependencies' => [
+                    'thingsboard' => true,
+                    'mqtt_tb' => true,
+                    'chirpstack' => true,
+                ],
+            ],
+            [
+                'name' => 'TB MQTT Health',
+                'description' => 'Direct ThingsBoard MQTT connection test',
+                'flow_number' => 6,
+                'dependencies' => [
+                    'thingsboard' => true,
+                    'mqtt_tb' => true,
+                ],
+            ],
+            [
+                'name' => 'CS MQTT Health',
+                'description' => 'Direct ChirpStack MQTT connection test',
+                'flow_number' => 7,
+                'dependencies' => [
+                    'chirpstack' => true,
+                    'mqtt_cs' => true,
+                ],
+            ],
+            [
+                'name' => 'TB HTTP Health',
+                'description' => 'ThingsBoard HTTP connection test',
+                'flow_number' => 8,
+                'dependencies' => [
+                    'thingsboard' => true,
+                ],
+            ],
+            [
+                'name' => 'CS HTTP Health',
+                'description' => 'ChirpStack HTTP connection test',
+                'flow_number' => 9,
+                'dependencies' => [
+                    'chirpstack' => true,
+                ],
+            ],
+        ];
+
+        foreach ($scenarios as $scenarioData) {
+            TestScenario::create([
+                'name' => $scenarioData['name'],
+                'description' => $scenarioData['description'],
+                'flow_number' => $scenarioData['flow_number'],
+                'dependencies' => $scenarioData['dependencies'],
+                'is_active' => true,
+                'interval_seconds' => 300,
+                'timeout_seconds' => 30,
+                'max_retries' => 3,
+            ]);
         }
     }
 }

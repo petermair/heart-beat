@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\App;
 use Laravel\Telescope\Http\Middleware\Authorize;
 use Laravel\Telescope\Watchers;
 
@@ -16,7 +17,22 @@ return [
     |
     */
 
-    'enabled' => env('TELESCOPE_ENABLED', true),
+    'enabled' => env('TELESCOPE_ENABLED', false),
+
+    'migrations' => env('TELESCOPE_MIGRATIONS', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Telescope Run Migrations
+    |--------------------------------------------------------------------------
+    |
+    | This configuration option determines whether Telescope migrations should
+    | be run. Set this to false to prevent Telescope from running migrations
+    | in certain environments (like testing).
+    |
+    */
+
+    'run_migrations' => env('TELESCOPE_RUN_MIGRATIONS', false),
 
     /*
     |--------------------------------------------------------------------------

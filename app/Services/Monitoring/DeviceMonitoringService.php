@@ -235,41 +235,7 @@ class DeviceMonitoringService
             ];
         }
     }
-
-    /**
-     * Wait for a response from a device after sending a command
-     *
-     * @param  Device  $device  The device to wait for
-     * @param  int  $messageId  The message ID to wait for
-     * @param  int  $timeout  Timeout in seconds
-     * @return array The wait result
-     */
-    public function waitForDeviceResponse(Device $device, int $messageId, int $timeout = 30): array
-    {
-        $startTime = microtime(true);
-
-        try {
-            $result = $this->chirpStackService->waitForDeviceResponse(
-                $device->chirpstackServer,
-                $device->application_id,
-                $device->device_eui,
-                $messageId,
-                $timeout
-            );
-
-            return [
-                'success' => $result['success'] ?? false,
-                'error_message' => $result['error_message'] ?? null,
-                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error_message' => $e->getMessage(),
-                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
-            ];
-        }
-    }
+    
 
     /**
      * Test direct command from ThingsBoard to device
@@ -346,14 +312,11 @@ class DeviceMonitoringService
         $startTime = microtime(true);
 
         try {
-            $result = $this->thingsBoardService->testMqttConnection(
-                $device->thingsboardServer,
-                $device->device_eui
-            );
+            $result = $this->thingsBoardService->testMqttConnection($device);
 
             return [
-                'success' => $result['success'] ?? false,
-                'error_message' => $result['error_message'] ?? null,
+                'success' => $result,
+                'error_message' => null,
                 'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
             ];
         } catch (\Exception $e) {
@@ -383,8 +346,39 @@ class DeviceMonitoringService
             );
 
             return [
-                'success' => $result['success'] ?? false,
-                'error_message' => $result['error_message'] ?? null,
+                'success' => $result,
+                'error_message' => null,
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error_message' => $e->getMessage(),
+                'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
+            ];
+        }
+    }
+
+    /**
+     * Test ChirpStack HTTP connection
+     *
+     * @param  Device  $device  The device to test
+     * @return array The test result
+     */
+    public function testChirpStackHttpConnection(Device $device): array
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->chirpStackService->testHttpConnection(
+                $device->chirpstackServer,
+                $device->application_id,
+                $device->device_eui
+            );
+
+            return [
+                'success' => $result,
+                'error_message' => null,
                 'response_time_ms' => (int) ((microtime(true) - $startTime) * 1000),
             ];
         } catch (\Exception $e) {

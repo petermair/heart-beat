@@ -5,12 +5,13 @@ namespace Tests\Feature\Services\ServiceFailure;
 use App\Models\ServiceFailurePattern;
 use App\Services\ServiceFailure\ServiceFailureAnalyzer;
 use Database\Seeders\ServiceFailurePatternsSeeder;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ServiceFailureAnalyzerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     protected ServiceFailureAnalyzer $analyzer;
 

@@ -50,7 +50,7 @@ public function sendMqttDataToThingsboard(
 
         // Send MQTT message
         $mqttClient->connect();
-        $mqttClient->sendTelemetry($message);
+        $mqttClient->sendTelemetry($device->name, $message);
 
         
 

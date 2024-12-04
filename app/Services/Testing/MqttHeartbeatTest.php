@@ -19,9 +19,12 @@ class MqttHeartbeatTest implements TestInterface
 
     protected ?float $responseTime = null;
 
-    public function __construct(ThingsBoardMqttClient $mqttClient)
+    protected ?object $device = null;
+
+    public function __construct(ThingsBoardMqttClient $mqttClient, object $device)
     {
         $this->mqttClient = $mqttClient;
+        $this->device = $device;
     }
 
     public function execute(): TestResult
@@ -31,7 +34,7 @@ class MqttHeartbeatTest implements TestInterface
             $this->requestId = uniqid('hb_', true);
 
             // Send heart-beat message
-            $this->mqttClient->sendTelemetry([
+            $this->mqttClient->sendTelemetry($this->device->name, [
                 'heartbeat' => [
                     'requestId' => $this->requestId,
                     'timestamp' => now()->toIso8601String(),

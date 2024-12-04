@@ -116,7 +116,7 @@ class MqttMonitor
 
             // Forward to ThingsBoard
             try {
-                $this->thingsboardClient->sendTelemetry([
+                $this->thingsboardClient->sendTelemetry($this->device->name, [
                     'data' => $message->data,
                     'metadata' => [
                         'deviceEUI' => $message->deviceEui,
@@ -197,7 +197,7 @@ class MqttMonitor
     {
         // Monitor device health by subscribing to join events and status updates
         $this->chirpstackClient->subscribeToJoin(function (array $event) {
-            $this->thingsboardClient->sendTelemetry([
+            $this->thingsboardClient->sendTelemetry($this->device->name, [
                 'status' => 'online',
                 'lastJoinTime' => time(),
                 'devAddr' => $event['devAddr'] ?? null,

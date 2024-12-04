@@ -33,16 +33,16 @@ class ThingsBoardMqttClient extends MqttClient
         parent::__construct($config, $phpMqttClient);
     }
 
-    public function sendTelemetry(array $data): void
+    public function sendTelemetry(string $devicename,array $data): void
     {
         $payload = json_encode($data);
-        $this->publish('v1/devices/me/telemetry', $payload);
+        $this->publish('monitoring/' . $devicename . '/telemetry', $payload);
     }
 
-    public function sendAttributes(array $attributes): void
+    public function sendAttributes(string $devicename,array $attributes): void
     {
         $payload = json_encode($attributes);
-        $this->publish('v1/devices/me/attributes', $payload);
+        $this->publish('monitoring/' . $devicename . '/attributes', $payload);
     }
 
     public function subscribeToRpcRequests(callable $callback): void

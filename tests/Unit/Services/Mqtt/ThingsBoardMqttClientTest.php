@@ -14,6 +14,9 @@ test('can send telemetry data', function () {
         ->with('id')
         ->andReturn(1);
     $device->shouldReceive('getAttribute')
+        ->with('name')
+        ->andReturn('test-device');
+    $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
             'host' => 'localhost',
@@ -35,11 +38,11 @@ test('can send telemetry data', function () {
         ->andReturn(true);
     $phpMqttClient->shouldReceive('publish')
         ->once()
-        ->with('v1/devices/me/telemetry', json_encode(['data' => 'test']))
+        ->with('monitoring/test-device/telemetry', json_encode(['data' => 'test']))
         ->andReturn(true);
 
     $client = new ThingsBoardMqttClient($device, $phpMqttClient);
-    $client->sendTelemetry(['data' => 'test']);
+    $client->sendTelemetry('test-device', ['data' => 'test']);
 });
 
 test('can send attributes', function () {
@@ -48,6 +51,9 @@ test('can send attributes', function () {
         ->with('id')
         ->andReturn(1);
     $device->shouldReceive('getAttribute')
+        ->with('name')
+        ->andReturn('test-device');
+    $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
             'host' => 'localhost',
@@ -69,11 +75,11 @@ test('can send attributes', function () {
         ->andReturn(true);
     $phpMqttClient->shouldReceive('publish')
         ->once()
-        ->with('v1/devices/me/attributes', json_encode(['attr' => 'value']))
+        ->with('monitoring/test-device/attributes', json_encode(['attr' => 'value']))
         ->andReturn(true);
 
     $client = new ThingsBoardMqttClient($device, $phpMqttClient);
-    $client->sendAttributes(['attr' => 'value']);
+    $client->sendAttributes('test-device', ['attr' => 'value']);
 });
 
 test('can subscribe to RPC requests', function () {
@@ -81,6 +87,9 @@ test('can subscribe to RPC requests', function () {
     $device->shouldReceive('getAttribute')
         ->with('id')
         ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('name')
+        ->andReturn('test-device');
     $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
@@ -103,7 +112,7 @@ test('can subscribe to RPC requests', function () {
         ->andReturn(true);
     $phpMqttClient->shouldReceive('subscribe')
         ->withArgs(function ($topic, $callback, $qos = 1) {
-            return $topic === 'v1/devices/me/rpc/request/+' && is_callable($callback) && $qos === 1;
+            return $topic === 'monitoring/test-device/rpc/request/+' && is_callable($callback) && $qos === 1;
         })
         ->andReturn(true);
 
@@ -116,6 +125,9 @@ test('can send heartbeat', function () {
     $device->shouldReceive('getAttribute')
         ->with('id')
         ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('name')
+        ->andReturn('test-device');
     $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
@@ -138,7 +150,7 @@ test('can send heartbeat', function () {
         ->andReturn(true);
     $phpMqttClient->shouldReceive('publish')
         ->once()
-        ->with('v1/devices/me/telemetry', Mockery::on(function ($payload) {
+        ->with('monitoring/test-device/telemetry', Mockery::on(function ($payload) {
             $data = json_decode($payload, true);
 
             return isset($data['timestamp']) &&
@@ -161,6 +173,9 @@ test('can report status', function () {
         ->with('id')
         ->andReturn(1);
     $device->shouldReceive('getAttribute')
+        ->with('name')
+        ->andReturn('test-device');
+    $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
             'host' => 'localhost',
@@ -182,7 +197,7 @@ test('can report status', function () {
         ->andReturn(true);
     $phpMqttClient->shouldReceive('publish')
         ->once()
-        ->with('v1/devices/me/attributes', Mockery::on(function ($payload) {
+        ->with('monitoring/test-device/attributes', Mockery::on(function ($payload) {
             $data = json_decode($payload, true);
 
             return isset($data['status']) &&
@@ -203,6 +218,9 @@ test('can send RPC response', function () {
         ->with('id')
         ->andReturn(1);
     $device->shouldReceive('getAttribute')
+        ->with('name')
+        ->andReturn('test-device');
+    $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
             'host' => 'localhost',
@@ -224,7 +242,7 @@ test('can send RPC response', function () {
         ->andReturn(true);
     $phpMqttClient->shouldReceive('publish')
         ->once()
-        ->with('v1/devices/me/rpc/response/123', json_encode(['result' => 'success']))
+        ->with('monitoring/test-device/rpc/response/123', json_encode(['result' => 'success']))
         ->andReturn(true);
 
     $client = new ThingsBoardMqttClient($device, $phpMqttClient);
@@ -236,6 +254,9 @@ test('can subscribe to RPC with message DTO', function () {
     $device->shouldReceive('getAttribute')
         ->with('id')
         ->andReturn(1);
+    $device->shouldReceive('getAttribute')
+        ->with('name')
+        ->andReturn('test-device');
     $device->shouldReceive('getAttribute')
         ->with('settings')
         ->andReturn([
@@ -258,13 +279,13 @@ test('can subscribe to RPC with message DTO', function () {
         ->andReturn(true);
     $phpMqttClient->shouldReceive('subscribe')
         ->withArgs(function ($topic, $callback, $qos = 1) {
-            if ($topic !== 'v1/devices/me/rpc/request/+' || $qos !== 1) {
+            if ($topic !== 'monitoring/test-device/rpc/request/+' || $qos !== 1) {
                 return false;
             }
 
             // Test the callback with a sample RPC message
             $callback(
-                'v1/devices/me/rpc/request/123',
+                'monitoring/test-device/rpc/request/123',
                 json_encode([
                     'method' => 'test_method',
                     'params' => ['param1' => 'value1']

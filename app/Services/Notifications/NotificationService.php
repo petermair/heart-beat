@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Mail;
 
 class NotificationService
 {
-    public function sendNotification(TestScenarioNotification $notification, TestResult $result): void
+    public function sendNotification(TestScenarioNotification $notification, TestResult $result, array $context = []): void
     {
         if (! $this->shouldSendNotification($notification, $result)) {
             return;
@@ -22,13 +22,13 @@ class NotificationService
 
         switch ($notificationType->type) {
             case 'email':
-                $this->sendEmailNotification($notificationType, $result);
+                $this->sendEmailNotification($notificationType, $result, $context);
                 break;
             case 'slack':
-                $this->sendSlackNotification($notificationType, $result);
+                $this->sendSlackNotification($notificationType, $result, $context);
                 break;
             case 'webhook':
-                $this->sendWebhookNotification($notificationType, $result);
+                $this->sendWebhookNotification($notificationType, $result, $context);
                 break;
         }
 
@@ -53,7 +53,7 @@ class NotificationService
         return true;
     }
 
-    private function sendEmailNotification(NotificationType $type, TestResult $result): void
+    private function sendEmailNotification(NotificationType $type, TestResult $result, array $context = []): void
     {
         $config = $type->configuration;
         $recipients = $config['recipients'] ?? [];
@@ -62,16 +62,8 @@ class NotificationService
             return;
         }
 
-        $testScenario = $result->testScenario;
-        $subject = "Test Scenario Alert: {$testScenario->name}";
-        $body = "Test scenario {$testScenario->name} has failed.\n\n";
-        $body .= "Details:\n";
-        $body .= "- Success Rate (1h): {$testScenario->success_rate_1h}%\n";
-        $body .= "- Success Rate (24h): {$testScenario->success_rate_24h}%\n";
-        $body .= '- Last Success: '.($testScenario->last_success_at ? $testScenario->last_success_at->diffForHumans() : 'Never')."\n";
-        $body .= "- Error: {$result->error_message}\n";
-        $body .= "- Status: {$result->status->value}\n";
-        $body .= "- Execution Time: {$result->execution_time_ms}ms\n";
+        $body = $this->buildEmailBody($result, $context);
+        $subject = "Test Scenario Alert: {$result->testScenario->name}";
 
         Mail::raw($body, function ($message) use ($recipients, $subject) {
             $message->to($recipients)
@@ -79,7 +71,7 @@ class NotificationService
         });
     }
 
-    private function sendSlackNotification(NotificationType $type, TestResult $result): void
+    private function sendSlackNotification(NotificationType $type, TestResult $result, array $context = []): void
     {
         $config = $type->configuration;
         $webhookUrl = $config['webhook_url'] ?? null;
@@ -88,20 +80,12 @@ class NotificationService
             return;
         }
 
-        $testScenario = $result->testScenario;
-        $message = [
-            'text' => "Test Scenario Alert: {$testScenario->name}\n".
-                     "Success Rate (1h): {$testScenario->success_rate_1h}%\n".
-                     "Success Rate (24h): {$testScenario->success_rate_24h}%\n".
-                     "Status: {$result->status->value}\n".
-                     "Execution Time: {$result->execution_time_ms}ms\n".
-                     "Error: {$result->error_message}",
-        ];
+        $message = $this->buildSlackMessage($result, $context);
 
         Http::post($webhookUrl, $message);
     }
 
-    private function sendWebhookNotification(NotificationType $type, TestResult $result): void
+    private function sendWebhookNotification(NotificationType $type, TestResult $result, array $context = []): void
     {
         $config = $type->configuration;
         $webhookUrl = $config['url'] ?? null;
@@ -112,24 +96,7 @@ class NotificationService
             return;
         }
 
-        $testScenario = $result->testScenario;
-        $payload = [
-            'test_scenario' => [
-                'id' => $testScenario->id,
-                'name' => $testScenario->name,
-                'success_rate_1h' => $testScenario->success_rate_1h,
-                'success_rate_24h' => $testScenario->success_rate_24h,
-                'last_success_at' => $testScenario->last_success_at,
-            ],
-            'result' => [
-                'id' => $result->id,
-                'status' => $result->status->value,
-                'execution_time_ms' => $result->execution_time_ms,
-                'error_message' => $result->error_message,
-                'created_at' => $result->created_at,
-                'completed_at' => $result->completed_at,
-            ],
-        ];
+        $payload = $this->buildWebhookPayload($result, $context);
 
         Http::withHeaders($headers)->send($method, $webhookUrl, ['json' => $payload]);
     }
@@ -140,5 +107,93 @@ class NotificationService
             'last_notification_at' => now(),
             'last_result_id' => $result->id,
         ]);
+    }
+
+    private function buildEmailBody(TestResult $result, array $context = []): string
+    {
+        $body = "Test Result Status: {$result->status}\n";
+        $body .= "Test Scenario: {$result->testScenario->name}\n";
+        
+        if (!empty($context)) {
+            $body .= "\nService Status:\n";
+            $body .= "Service: {$context['service']}\n";
+            $body .= "Success Rate: {$context['success_rate']}%\n";
+            $body .= "Total Flows: {$context['total_flows']}\n";
+            $body .= "Last Success: {$context['last_success']}\n";
+            $body .= "Downtime Duration: {$context['downtime_duration']} minutes\n";
+        }
+        
+        if ($result->error_message) {
+            $body .= "\nError Message: {$result->error_message}\n";
+        }
+        
+        return $body;
+    }
+
+    private function buildSlackMessage(TestResult $result, array $context = []): array
+    {
+        $blocks = [
+            [
+                'type' => 'section',
+                'text' => [
+                    'type' => 'mrkdwn',
+                    'text' => "*Test Result Status: {$result->status}*\nTest Scenario: {$result->testScenario->name}"
+                ]
+            ]
+        ];
+
+        if (!empty($context)) {
+            $blocks[] = [
+                'type' => 'section',
+                'text' => [
+                    'type' => 'mrkdwn',
+                    'text' => "*Service Status:*\n" .
+                             "Service: {$context['service']}\n" .
+                             "Success Rate: {$context['success_rate']}%\n" .
+                             "Total Flows: {$context['total_flows']}\n" .
+                             "Last Success: {$context['last_success']}\n" .
+                             "Downtime Duration: {$context['downtime_duration']} minutes"
+                ]
+            ];
+        }
+
+        if ($result->error_message) {
+            $blocks[] = [
+                'type' => 'section',
+                'text' => [
+                    'type' => 'mrkdwn',
+                    'text' => "*Error Message:*\n{$result->error_message}"
+                ]
+            ];
+        }
+
+        return [
+            'blocks' => $blocks
+        ];
+    }
+
+    private function buildWebhookPayload(TestResult $result, array $context = []): array
+    {
+        $payload = [
+            'status' => $result->status,
+            'test_scenario' => $result->testScenario->name,
+            'timestamp' => now()->toIso8601String()
+        ];
+
+        if (!empty($context)) {
+            $payload['service_status'] = [
+                'service' => $context['service'],
+                'success_rate' => $context['success_rate'],
+                'total_flows' => $context['total_flows'],
+                'last_success' => $context['last_success'],
+                'downtime_duration' => $context['downtime_duration']
+            ];
+        }
+
+        if ($result->error_message) {
+            $payload['error_message'] = $result->error_message;
+        }
+
+        return $payload;
     }
 }

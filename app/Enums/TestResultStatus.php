@@ -19,16 +19,14 @@ enum TestResultStatus: string
 {
     case PENDING = 'PENDING';   // Initial state when test starts
     case SUCCESS = 'SUCCESS';   // Test completed successfully
-    case FAILURE = 'FAILURE';   // Test failed with an error
-    case TIMEOUT = 'TIMEOUT';   // Test didn't complete within expected time
+    case FAILURE = 'FAILURE';   // Test failed with an error (normally a timeout)    
 
     public function label(): string
     {
         return match($this) {
             self::PENDING => 'Pending',
             self::SUCCESS => 'Success',
-            self::FAILURE => 'Failure',
-            self::TIMEOUT => 'Timeout',
+            self::FAILURE => 'Failure',            
         };
     }
 }

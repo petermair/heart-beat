@@ -38,40 +38,37 @@ class MqttBrokerResource extends Resource
                             ->default(1883)
                             ->minValue(1)
                             ->maxValue(65535),
-                        Forms\Components\Toggle::make('ssl_enabled')
-                            ->required()
-                            ->default(false),
-                        Forms\Components\Textarea::make('description')
-                            ->maxLength(65535)
-                            ->columnSpanFull(),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('Monitoring Configuration')
-                    ->schema([
-                        Forms\Components\Toggle::make('is_active')
-                            ->required()
-                            ->default(true),
-                        Forms\Components\TextInput::make('monitoring_interval')
-                            ->required()
-                            ->numeric()
-                            ->default(300)
-                            ->suffix('seconds')
-                            ->minValue(60)
-                            ->maxValue(86400),
-                        Forms\Components\TextInput::make('test_topic')
-                            ->maxLength(255)
-                            ->placeholder('test/heartbeat'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Authentication')
                     ->schema([
-                        Forms\Components\KeyValue::make('credentials')
-                            ->keyLabel('Key')
-                            ->valueLabel('Value')
-                            ->addable()
-                            ->deletable()
-                            ->columnSpanFull(),
-                    ]),
+                        Forms\Components\TextInput::make('username')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('password')
+                            ->password()
+                            ->dehydrateStateUsing(fn ($state) => $state ? bcrypt($state) : null)
+                            ->maxLength(255),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('SSL Configuration')
+                    ->schema([
+                        Forms\Components\Toggle::make('ssl_enabled')
+                            ->required()
+                            ->default(false)
+                            ->reactive(),
+                        Forms\Components\Textarea::make('ssl_ca')
+                            ->label('SSL CA Certificate')
+                            ->visible(fn (callable $get) => $get('ssl_enabled'))
+                            ->maxLength(65535),
+                        Forms\Components\Textarea::make('ssl_cert')
+                            ->label('SSL Client Certificate')
+                            ->visible(fn (callable $get) => $get('ssl_enabled'))
+                            ->maxLength(65535),
+                        Forms\Components\Textarea::make('ssl_key')
+                            ->label('SSL Client Key')
+                            ->visible(fn (callable $get) => $get('ssl_enabled'))
+                            ->maxLength(65535),
+                    ])->columns(2),
             ]);
     }
 
@@ -84,21 +81,20 @@ class MqttBrokerResource extends Resource
                 Tables\Columns\TextColumn::make('host')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('port'),
+                Tables\Columns\TextColumn::make('username')
+                    ->searchable(),
                 Tables\Columns\IconColumn::make('ssl_enabled')
                     ->boolean(),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('monitoring_interval')
-                    ->suffix(' seconds'),
-                Tables\Columns\TextColumn::make('test_topic')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active'),
                 Tables\Filters\TernaryFilter::make('ssl_enabled'),
             ])
             ->actions([

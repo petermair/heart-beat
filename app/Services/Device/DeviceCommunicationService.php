@@ -75,7 +75,7 @@ private function generateLPP($flowType, $testResult)     {
     // Channel 1: flow_number (1 byte)
     $buffer .= chr(1);                    // Channel
     $buffer .= chr(0x00);                 // Type (Digital Input)
-    $buffer .= chr($flowType->value);     // Value
+    $buffer .= chr($flowType->flow_number);     // Value
 
     // Channel 2: monitoring result ID (4 bytes)
     $buffer .= chr(2);                    // Channel

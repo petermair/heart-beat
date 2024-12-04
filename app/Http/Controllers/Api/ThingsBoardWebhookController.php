@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\TestResult;
+use App\Models\DeviceMessage;
 use App\Services\MessageFlow\MessageFlowStatusService;
 use App\Enums\TestResultStatus;
 use Illuminate\Http\Request;
@@ -53,6 +54,23 @@ class ThingsBoardWebhookController extends Controller
                     'completed_at' => now(),
                     'response_time_ms' => $responseTime
                 ]);
+
+                // Create or update device message record
+                DeviceMessage::updateOrCreate(
+                    [
+                        'message_flow_id' => $messageFlow->id,
+                    ],
+                    [
+                        'device_id' => $messageFlow->testResult->device_id,
+                        'source' => 'ThingsBoard',
+                        'success' => true,
+                        'error_message' => null,
+                        'response_time_ms' => $responseTime,
+                        'metadata' => json_encode([
+                            'params' => $validated['params'],
+                        ]),
+                    ]
+                );
             }
             
             // Process message flows and update service statuses

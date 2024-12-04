@@ -1,6 +1,6 @@
 @php
     $title = "Monitoring {$scenario->name}";
-    $description = "MQTT Device: {$scenario->mqttDevice->name} | HTTP Device: {$scenario->httpDevice->name}";
+    $description = "MQTT Device: {$scenario->mqttDevice->name} | HTTP Device: " . ($scenario->httpDevice?->name ?? 'None');
 @endphp
 
 <div>

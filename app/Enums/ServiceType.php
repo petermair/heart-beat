@@ -9,9 +9,16 @@ namespace App\Enums;
  * DO NOT add or modify these types without careful consideration
  * as they are used for service identification and error tracking.
  * 
- * Current types:
+ * Flow 1: ThingsBoard -> MQTT TB -> LoRa TX -> MQTT CS -> ChirpStack
+ * Flow 2: ChirpStack -> MQTT CS -> LoRa RX -> MQTT TB -> ThingsBoard
+ * 
+ * Service Types:
  * - THINGSBOARD: ThingsBoard IoT platform service
  * - CHIRPSTACK: ChirpStack LoRaWAN network server
+ * - MQTT_TB: MQTT service for ThingsBoard communication
+ * - MQTT_CS: MQTT service for ChirpStack communication
+ * - LORATX: LoRa transmission service
+ * - LORARX: LoRa reception service
  */
 enum ServiceType: string
 {

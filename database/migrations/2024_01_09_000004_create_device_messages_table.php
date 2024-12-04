@@ -21,7 +21,6 @@ return new class extends Migration
             $table->text('error_message')->nullable();
             $table->unsignedInteger('response_time_ms');
             $table->json('metadata');
-            $table->timestamp('created_at');
         });
     }
 

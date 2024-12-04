@@ -143,7 +143,7 @@ class TestExecutionService
     {
         $result = new TestResult([
             'test_scenario_id' => $scenario->id,
-            'flow_type' => FlowType::TB_TO_CS_TO_TB,
+            'flow_type' => FlowType::CS_TO_TB_TO_CS,
             'start_time' => now(),
             'status' => TestResultStatus::PENDING,
         ]);

@@ -3,19 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ServerResource\Pages;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceCreateHttpRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DeviceDeleteHttpRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\Devices\DevicesHttpRequest;
-use App\Http\Integrations\ThingsBoardHttp\Requests\LoginHttpRequest;
-use App\Http\Integrations\ThingsBoardHttp\ThingsBoardHttp;
 use App\Models\Server;
 use App\Models\ServerType;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 
 class ServerResource extends Resource
@@ -53,6 +46,10 @@ class ServerResource extends Resource
                             ->options(ServerType::pluck('name', 'id'))
                             ->reactive()
                             ->afterStateUpdated(fn ($state, callable $set) => static::resetDynamicFields($state, $set)),
+                        Forms\Components\Select::make('mqtt_broker_id')
+                            ->label('MQTT Broker')
+                            ->relationship('mqttBroker', 'name')
+                            ->nullable(),
                         Forms\Components\TextInput::make('url')
                             ->required()
                             ->url()
@@ -110,13 +107,11 @@ class ServerResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('serverType.name')
-                    ->label('Type')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'ThingsBoard' => 'success',
-                        'ChirpStack' => 'warning',
-                        default => 'gray',
-                    }),
+                    ->label('Server Type')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('mqttBroker.name')
+                    ->label('MQTT Broker')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('url')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
@@ -137,137 +132,6 @@ class ServerResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Action::make('manage_devices')
-                    ->icon('heroicon-o-device-tablet')
-                    ->color('success')
-                    ->visible(fn (Server $record) => $record->serverType->name === 'ThingsBoard')
-                    ->form([
-                        Forms\Components\Placeholder::make('existing_devices')
-                            ->label('Existing Devices')
-                            ->content(function (Server $record) {
-                                try {
-                                    $client = new ThingsBoardHttp(
-                                        baseUrl: $record->url
-                                    );
-
-                                    $loginResponse = $client->send(new LoginHttpRequest([
-                                        'username' => $record->credentials['username'],
-                                        'password' => $record->credentials['password'],
-                                    ]));
-                                    if (! $loginResponse->successful()) {
-                                        return 'Failed to authenticate with ThingsBoard';
-                                    }
-
-                                    $devicesResponse = $client->send(new DevicesHttpRequest);
-                                    if (! $devicesResponse->successful()) {
-                                        return 'Failed to fetch devices';
-                                    }
-
-                                    $devices = $devicesResponse->json('data');
-                                    if (empty($devices)) {
-                                        return 'No devices found';
-                                    }
-
-                                    $recordId = $record->id;
-
-                                    return view('filament.components.devices-list', compact('devices', 'recordId'))->render();
-
-                                } catch (\Exception $e) {
-                                    return "Error: {$e->getMessage()}";
-                                }
-                            })->columnSpanFull(),
-                        Forms\Components\TextInput::make('device_name')
-                            ->required()
-                            ->maxLength(255)
-                            ->label('Device Name'),
-                        Forms\Components\TextInput::make('device_type')
-                            ->required()
-                            ->default('default')
-                            ->maxLength(255)
-                            ->label('Device Type'),
-                        Forms\Components\TextInput::make('label')
-                            ->maxLength(255)
-                            ->label('Label (Optional)'),
-                    ])
-                    ->modalHeading('Manage ThingsBoard Device')
-                    ->modalSubmitActionLabel('Create Device')
-                    ->action(function (array $data, Server $record): void {
-                        $client = new ThingsBoardHttp(
-                            baseUrl: $record->url
-                        );
-
-                        try {
-                            $loginResponse = $client->send(new LoginHttpRequest([
-                                'username' => $record->credentials['username'],
-                                'password' => $record->credentials['password'],
-                            ]));
-                            if (! $loginResponse->successful()) {
-                                throw new \Exception('Failed to authenticate with ThingsBoard');
-                            }
-
-                            $createResponse = $client->send(new DeviceCreateHttpRequest([
-                                'name' => $data['device_name'],
-                                'type' => $data['device_type'],
-                                'label' => $data['label'] ?? null,
-                            ]));
-
-                            if (! $createResponse->successful()) {
-                                throw new \Exception('Failed to create device');
-                            }
-
-                            Notification::make()
-                                ->success()
-                                ->title('Device Created')
-                                ->body("Successfully created device {$data['device_name']}")
-                                ->send();
-
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->danger()
-                                ->title('Failed to Create Device')
-                                ->body($e->getMessage())
-                                ->send();
-                        }
-                    }),
-                Action::make('delete_device')
-                    ->requiresConfirmation()
-                    ->modalDescription('Are you sure you want to delete this device? This action cannot be undone.')
-                    ->action(function (array $data, Server $record): void {
-                        $client = new ThingsBoardHttp(
-                            baseUrl: $record->url
-                        );
-
-                        try {
-                            $loginResponse = $client->send(new LoginHttpRequest([
-                                'username' => $record->credentials['username'],
-                                'password' => $record->credentials['password'],
-                            ]));
-                            if (! $loginResponse->successful()) {
-                                throw new \Exception('Failed to authenticate with ThingsBoard');
-                            }
-
-                            $deleteResponse = $client->send(new DeviceDeleteHttpRequest(
-                                deviceId: $data['deviceId']
-                            ));
-
-                            if (! $deleteResponse->successful()) {
-                                throw new \Exception('Failed to delete device');
-                            }
-
-                            Notification::make()
-                                ->success()
-                                ->title('Device Deleted')
-                                ->body('Successfully deleted the device')
-                                ->send();
-
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->danger()
-                                ->title('Failed to Delete Device')
-                                ->body($e->getMessage())
-                                ->send();
-                        }
-                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -302,7 +166,11 @@ class ServerResource extends Resource
             return '';
         }
 
-        $required = implode(', ', $serverType->required_credentials ?? []);
+        $credentials = is_array($serverType->required_credentials) 
+            ? $serverType->required_credentials 
+            : [];
+
+        $required = implode(', ', $credentials);
 
         return "Required credentials: {$required}";
     }
@@ -318,7 +186,11 @@ class ServerResource extends Resource
             return '';
         }
 
-        $required = implode(', ', $serverType->required_settings ?? []);
+        $settings = is_array($serverType->required_settings) 
+            ? $serverType->required_settings 
+            : [];
+
+        $required = implode(', ', $settings);
 
         return "Required settings: {$required}";
     }

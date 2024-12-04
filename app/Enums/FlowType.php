@@ -46,4 +46,19 @@ enum FlowType: string
             self::CS_HTTP_HEALTH => 'ChirpStack HTTP Health',
         };
     }
+
+    public function flowNumber(): int
+    {
+        return match($this) {
+            self::TB_TO_CS => 1,
+            self::CS_TO_TB => 2,
+            self::CS_TO_TB_TO_CS => 3,
+            self::DIRECT_TEST_CS_TB => 4,
+            self::DIRECT_TEST_TB_CS => 5,
+            self::TB_MQTT_HEALTH => 6,
+            self::CS_MQTT_HEALTH => 7,
+            self::TB_HTTP_HEALTH => 8,
+            self::CS_HTTP_HEALTH => 9,
+        };
+    }
 }

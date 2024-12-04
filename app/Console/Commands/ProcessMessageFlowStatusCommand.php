@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\TestResult;
 use App\Services\MessageFlow\MessageFlowStatusService;
 use Illuminate\Console\Command;
 
@@ -29,7 +30,12 @@ class ProcessMessageFlowStatusCommand extends Command
         $this->info('Processing message flow statuses...');
         
         // Process message flows and update service statuses
-        // $messageFlowStatusService->processMessageFlows();
+        $testResults = TestResult::where('status', 'PENDING')->get();        
+        foreach($testResults as $testResult) {
+          $messageFlowStatusService->processTestResult($testResult);   
+        }
+
+         
         
         $this->info('Message flow status processing completed.');
     }

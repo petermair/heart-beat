@@ -112,4 +112,16 @@ class TestResult extends Model
             ->mapWithKeys(fn ($type) => [$type->value => $type->label()])
             ->toArray();
     }
+
+    public function messageFlows()
+{
+    return $this->hasMany(MessageFlow::class);
+}
+
+public function deviceMessages()
+{
+    return $this->hasMany(DeviceMessage::class);
+}
+
+
 }

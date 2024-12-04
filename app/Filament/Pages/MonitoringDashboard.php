@@ -29,10 +29,7 @@ class MonitoringDashboard extends Page implements HasTable
     {
         return [
             'system-stats' => \App\Filament\Widgets\SystemStatsOverview::class,
-            'test-type-stats' => \App\Filament\Widgets\TestTypeStatsOverview::class,
-            'device-stats' => \App\Filament\Widgets\DeviceStatsOverview::class,
             'flow-stats' => \App\Filament\Widgets\FlowStatsOverview::class,
-            'response-time' => \App\Filament\Widgets\ResponseTimeChart::class,
         ];
     }
 
@@ -46,11 +43,14 @@ class MonitoringDashboard extends Page implements HasTable
                     ->latest()
             )
             ->columns([
-                TextColumn::make('device.name')
-                    ->label('Device')
+                TextColumn::make('test_scenario.name')
+                    ->label('Test Scenario')
                     ->searchable(),
-                TextColumn::make('flow_type')
-                    ->label('Flow Type')
+                TextColumn::make('test_scenario.mqttDevice.name')
+                    ->label('MQTT Device')
+                    ->searchable(),
+                TextColumn::make('flow_number')
+                    ->label('Flow #')
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()

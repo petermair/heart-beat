@@ -4,108 +4,99 @@ namespace App\Services\MessageFlow;
 
 use App\Enums\FlowType;
 use App\Enums\ServiceType;
+use App\Enums\TestResultStatus;
 use App\Models\MessageFlow;
 use Illuminate\Support\Collection;
 
 class ServiceFailureAnalyzer
 {
     /**
-     * Analyze which services might be failing based on flow patterns
+     * Matrix defining which flows must fail (true) or succeed (false) for each service to be considered down
+     */
+    public const SERVICE_MATRIX_FLOW_FAIL = [
+        ServiceType::THINGSBOARD->value => [
+            FlowType::TB_TO_CS->value => true,
+            FlowType::CS_TO_TB->value => true,
+            FlowType::CS_TO_TB_TO_CS->value => true,
+            FlowType::DIRECT_TEST_CS_TB->value => true,
+            FlowType::DIRECT_TEST_TB_CS->value => true,
+            FlowType::TB_MQTT_HEALTH->value => true,
+            FlowType::CS_MQTT_HEALTH->value => false
+        ],
+        ServiceType::CHIRPSTACK->value => [
+            FlowType::TB_TO_CS->value => true,
+            FlowType::CS_TO_TB->value => true,
+            FlowType::CS_TO_TB_TO_CS->value => true,
+            FlowType::DIRECT_TEST_CS_TB->value => true,
+            FlowType::DIRECT_TEST_TB_CS->value => true,
+            FlowType::TB_MQTT_HEALTH->value => false,
+            FlowType::CS_MQTT_HEALTH->value => true
+        ],
+        ServiceType::MQTT_TB->value => [
+            FlowType::TB_TO_CS->value => true,
+            FlowType::CS_TO_TB->value => true,
+            FlowType::CS_TO_TB_TO_CS->value => true,
+            FlowType::DIRECT_TEST_CS_TB->value => false,
+            FlowType::DIRECT_TEST_TB_CS->value => false,
+            FlowType::TB_MQTT_HEALTH->value => true,
+            FlowType::CS_MQTT_HEALTH->value => false
+        ],
+        ServiceType::MQTT_CS->value => [
+            FlowType::TB_TO_CS->value => true,
+            FlowType::CS_TO_TB->value => true,
+            FlowType::CS_TO_TB_TO_CS->value => true,
+            FlowType::DIRECT_TEST_CS_TB->value => false,
+            FlowType::DIRECT_TEST_TB_CS->value => false,
+            FlowType::TB_MQTT_HEALTH->value => false,
+            FlowType::CS_MQTT_HEALTH->value => true
+        ],
+        ServiceType::LORATX->value => [
+            FlowType::TB_TO_CS->value => true,
+            FlowType::CS_TO_TB->value => false,
+            FlowType::CS_TO_TB_TO_CS->value => true,
+            FlowType::DIRECT_TEST_CS_TB->value => false,
+            FlowType::DIRECT_TEST_TB_CS->value => false,
+            FlowType::TB_MQTT_HEALTH->value => false,
+            FlowType::CS_MQTT_HEALTH->value => false
+        ],
+        ServiceType::LORARX->value => [
+            FlowType::TB_TO_CS->value => false,
+            FlowType::CS_TO_TB->value => true,
+            FlowType::CS_TO_TB_TO_CS->value => true,
+            FlowType::DIRECT_TEST_CS_TB->value => false,
+            FlowType::DIRECT_TEST_TB_CS->value => false,
+            FlowType::TB_MQTT_HEALTH->value => false,
+            FlowType::CS_MQTT_HEALTH->value => false
+        ]
+    ];
+
+    /**
+     * Analyze flows to determine which service is definitely down
      */
     public function analyzePotentialFailures(Collection $flows): Collection
     {
-        $failedFlows = $flows->filter(fn(MessageFlow $flow) => $flow->isFailed());
-        
-        if ($failedFlows->isEmpty()) {
-            return collect();
+        foreach (ServiceType::cases() as $service) {
+            $isServiceDown = true;
+
+            // Check each flow in the matrix for this service
+            foreach (self::SERVICE_MATRIX_FLOW_FAIL[$service->value] as $flowType => $mustFail) {
+                $flow = $flows->first(fn($f) => $f->flow_type->value === $flowType);
+                if (!$flow) continue;
+
+                $isFailing = $flow->status === TestResultStatus::FAILURE->value;
+                
+                // If a flow that must fail is successful, or a flow that must succeed is failing
+                if (($mustFail && !$isFailing) || (!$mustFail && $isFailing)) {
+                    $isServiceDown = false;
+                    break;
+                }
+            }
+
+            if ($isServiceDown) {
+                return collect([$service]);
+            }
         }
 
-        $potentialFailures = collect();
-
-        // Check ThingsBoard failures
-        if ($this->isThingsBoardFailure($failedFlows)) {
-            $potentialFailures->push(ServiceType::THINGSBOARD);
-        }
-
-        // Check ChirpStack failures
-        if ($this->isChirpStackFailure($failedFlows)) {
-            $potentialFailures->push(ServiceType::CHIRPSTACK);
-        }
-
-        // Check MQTT failures
-        if ($this->isMqttTbFailure($failedFlows)) {
-            $potentialFailures->push(ServiceType::MQTT_TB);
-        }
-        if ($this->isMqttCsFailure($failedFlows)) {
-            $potentialFailures->push(ServiceType::MQTT_CS);
-        }
-
-        // Check LoRa failures
-        if ($this->isLoraTXFailure($failedFlows)) {
-            $potentialFailures->push(ServiceType::LORATX);
-        }
-        if ($this->isLoraRXFailure($failedFlows)) {
-            $potentialFailures->push(ServiceType::LORARX);
-        }
-
-        return $potentialFailures->unique();
-    }
-
-    private function isThingsBoardFailure(Collection $failedFlows): bool
-    {
-        return $failedFlows->contains(fn(MessageFlow $flow) => 
-            in_array($flow->flow_type, [
-                FlowType::TB_MQTT_HEALTH,
-                // FlowType::TB_HTTP_HEALTH,
-                FlowType::TB_TO_CS,
-                FlowType::CS_TO_TB_TO_CS
-            ])
-        );
-    }
-
-    private function isChirpStackFailure(Collection $failedFlows): bool
-    {
-        return $failedFlows->contains(fn(MessageFlow $flow) => 
-            in_array($flow->flow_type, [
-                FlowType::CS_MQTT_HEALTH,
-                // FlowType::CS_HTTP_HEALTH,
-                FlowType::CS_TO_TB,
-                FlowType::CS_TO_TB_TO_CS
-            ])
-        );
-    }
-
-    private function isMqttTbFailure(Collection $failedFlows): bool
-    {
-        return $failedFlows->contains(fn(MessageFlow $flow) => 
-            $flow->flow_type === FlowType::TB_MQTT_HEALTH
-        );
-    }
-
-    private function isMqttCsFailure(Collection $failedFlows): bool
-    {
-        return $failedFlows->contains(fn(MessageFlow $flow) => 
-            $flow->flow_type === FlowType::CS_MQTT_HEALTH
-        );
-    }
-
-    private function isLoraTXFailure(Collection $failedFlows): bool
-    {
-        return $failedFlows->contains(fn(MessageFlow $flow) => 
-            in_array($flow->flow_type, [
-                FlowType::TB_TO_CS,
-                FlowType::CS_TO_TB_TO_CS
-            ])
-        );
-    }
-
-    private function isLoraRXFailure(Collection $failedFlows): bool
-    {
-        return $failedFlows->contains(fn(MessageFlow $flow) => 
-            in_array($flow->flow_type, [
-                FlowType::CS_TO_TB,
-                FlowType::CS_TO_TB_TO_CS
-            ])
-        );
+        return collect();
     }
 }

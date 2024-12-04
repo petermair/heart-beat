@@ -3,13 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DeviceResource\Pages;
-use App\Filament\Resources\DeviceResource\RelationManagers;
-use App\Jobs\DeviceMonitoringJob;
 use App\Models\Device;
 use App\Models\Server;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -66,9 +63,12 @@ class DeviceResource extends Resource
                             ->searchable(),
 
                         Forms\Components\Select::make('communication_type_id')
-                            ->relationship('communicationType', 'label')
-                            ->required()
-                            ->searchable(),
+                            ->label('Communication Type')
+                            ->options([
+                                1 => 'MQTT',
+                                2 => 'HTTP',
+                            ])
+                            ->required(),
                     ]),
 
                 Forms\Components\Section::make('ChirpStack Configuration')
@@ -89,9 +89,6 @@ class DeviceResource extends Resource
                         Forms\Components\Toggle::make('is_active')
                             ->label('Active')
                             ->default(true),
-                        Forms\Components\Toggle::make('monitoring_enabled')
-                            ->label('Enable Monitoring')
-                            ->default(true),
                     ]),
             ]);
     }
@@ -102,86 +99,30 @@ class DeviceResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('device_eui')
-                    ->label('Device EUI')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('thingsboardServer.name')
                     ->label('ThingsBoard Server')
-                    ->sortable(),
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('chirpstackServer.name')
                     ->label('ChirpStack Server')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('communicationType.label')
-                    ->label('Communication')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('success_rate')
-                    ->label('Success Rate')
-                    ->getStateUsing(fn (Device $record): string => $record->getSuccessRate().'%')
-                    ->color(fn (Device $record): string => match (true) {
-                        $record->getSuccessRate() >= 90 => 'success',
-                        $record->getSuccessRate() >= 70 => 'warning',
-                        default => 'danger',
-                    }
-                    ),
-                Tables\Columns\TextColumn::make('avg_response_time')
-                    ->label('Avg Response (ms)')
-                    ->getStateUsing(fn (Device $record): string => $record->getAverageResponseTime() ?
-                        number_format($record->getAverageResponseTime(), 2) :
-                        'N/A'
-                    ),
+                    ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
-                    ->label('Active')
                     ->boolean(),
-                Tables\Columns\IconColumn::make('monitoring_enabled')
-                    ->label('Monitoring')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('last_seen_at')
+                Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable(),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('thingsboard_server')
-                    ->relationship('thingsboardServer', 'name'),
-                Tables\Filters\SelectFilter::make('chirpstack_server')
-                    ->relationship('chirpstackServer', 'name'),
-                Tables\Filters\SelectFilter::make('communication_type')
-                    ->relationship('communicationType', 'label'),
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Active'),
-                Tables\Filters\TernaryFilter::make('monitoring_enabled')
-                    ->label('Monitoring'),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('test')
-                        ->label('Test Selected')
-                        ->icon('heroicon-o-play')
-                        ->color('success')
-                        ->action(function ($records) {
-                            foreach ($records as $record) {
-                                DeviceMonitoringJob::dispatch($record);
-                            }
-
-                            Notification::make()
-                                ->title('Tests Started')
-                                ->body('Device monitoring tests have been initiated.')
-                                ->success()
-                                ->send();
-                        }),
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            RelationManagers\MonitoringResultsRelationManager::class,
-        ];
     }
 
     public static function getPages(): array

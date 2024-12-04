@@ -12,6 +12,7 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Form;
+use Filament\Support\Colors\Color;
 
 class ServiceFlowsDashboard extends Page
 {
@@ -25,13 +26,35 @@ class ServiceFlowsDashboard extends Page
     {
         $services = [
             ServiceType::THINGSBOARD->label() => $scenario->thingsboard_status,
-            ServiceType::MQTT->label() => $scenario->mqtt_status,
+            ServiceType::MQTT_TB->label() => $scenario->mqtt_tb_status,
             ServiceType::LORATX->label() => $scenario->loratx_status,
+            ServiceType::MQTT_CS->label() => $scenario->mqtt_cs_status,
             ServiceType::CHIRPSTACK->label() => $scenario->chirpstack_status,
             ServiceType::LORARX->label() => $scenario->lorarx_status,
         ];
 
         return StatusHelper::getStatusDescription($services);
+    }
+
+    protected function getStatusColor(string $status): string
+    {
+        return match (strtoupper($status)) {
+            'HEALTHY' => 'success',
+            'WARNING' => 'warning',
+            'CRITICAL' => 'danger',
+            default => 'gray',
+        };
+    }
+
+    protected function renderStatus(string $label, string $status): Placeholder
+    {
+        return Placeholder::make($label)
+            ->label($label)
+            ->content(view('components.status-badge', [
+                'label' => $label,
+                'status' => $status,
+                'color' => $this->getStatusColor($status),
+            ]));
     }
 
     public function form(Form $form): Form
@@ -58,29 +81,34 @@ class ServiceFlowsDashboard extends Page
                             Grid::make(5)
                                 ->schema([
                                     // ThingsBoard
-                                    Placeholder::make('thingsboard')
-                                        ->label(ServiceType::THINGSBOARD->label())
-                                        ->content(StatusHelper::formatStatus($scenario->thingsboard_status)),
+                                    $this->renderStatus(
+                                        ServiceType::THINGSBOARD->label(),
+                                        $scenario->thingsboard_status
+                                    ),
 
-                                    // MQTT Broker 1
-                                    Placeholder::make('mqtt_broker_1')
-                                        ->label(ServiceType::MQTT->label())
-                                        ->content(StatusHelper::formatStatus($scenario->mqtt_status)),
+                                    // MQTT Broker TB (Downlink)
+                                    $this->renderStatus(
+                                        ServiceType::MQTT_TB->label(),
+                                        $scenario->mqtt_tb_status
+                                    ),
 
                                     // LoRa TX
-                                    Placeholder::make('lora_tx')
-                                        ->label(ServiceType::LORATX->label())
-                                        ->content(StatusHelper::formatStatus($scenario->loratx_status)),
+                                    $this->renderStatus(
+                                        ServiceType::LORATX->label(),
+                                        $scenario->loratx_status
+                                    ),
 
-                                    // MQTT Broker 2
-                                    Placeholder::make('mqtt_broker_2')
-                                        ->label(ServiceType::MQTT->label())
-                                        ->content(StatusHelper::formatStatus($scenario->mqtt_status)),
+                                    // MQTT Broker CS (Downlink)
+                                    $this->renderStatus(
+                                        ServiceType::MQTT_CS->label(),
+                                        $scenario->mqtt_cs_status
+                                    ),
 
                                     // ChirpStack
-                                    Placeholder::make('chirpstack')
-                                        ->label(ServiceType::CHIRPSTACK->label())
-                                        ->content(StatusHelper::formatStatus($scenario->chirpstack_status)),
+                                    $this->renderStatus(
+                                        ServiceType::CHIRPSTACK->label(),
+                                        $scenario->chirpstack_status
+                                    ),
                                 ])
                         ]),
                         
@@ -90,31 +118,36 @@ class ServiceFlowsDashboard extends Page
                             Grid::make(5)
                                 ->schema([
                                     // ChirpStack
-                                    Placeholder::make('chirpstack_up')
-                                        ->label(ServiceType::CHIRPSTACK->label())
-                                        ->content(StatusHelper::formatStatus($scenario->chirpstack_status)),
+                                    $this->renderStatus(
+                                        ServiceType::CHIRPSTACK->label(),
+                                        $scenario->chirpstack_status
+                                    ),
 
-                                    // MQTT Broker 1
-                                    Placeholder::make('mqtt_broker_up_1')
-                                        ->label(ServiceType::MQTT->label())
-                                        ->content(StatusHelper::formatStatus($scenario->mqtt_status)),
+                                    // MQTT Broker CS (Uplink)
+                                    $this->renderStatus(
+                                        ServiceType::MQTT_CS->label(),
+                                        $scenario->mqtt_cs_status
+                                    ),
 
                                     // LoRa RX
-                                    Placeholder::make('lora_rx')
-                                        ->label(ServiceType::LORARX->label())
-                                        ->content(StatusHelper::formatStatus($scenario->lorarx_status)),
+                                    $this->renderStatus(
+                                        ServiceType::LORARX->label(),
+                                        $scenario->lorarx_status
+                                    ),
 
-                                    // MQTT Broker 2
-                                    Placeholder::make('mqtt_broker_up_2')
-                                        ->label(ServiceType::MQTT->label())
-                                        ->content(StatusHelper::formatStatus($scenario->mqtt_status)),
+                                    // MQTT Broker TB (Uplink)
+                                    $this->renderStatus(
+                                        ServiceType::MQTT_TB->label(),
+                                        $scenario->mqtt_tb_status
+                                    ),
 
                                     // ThingsBoard
-                                    Placeholder::make('thingsboard_up')
-                                        ->label(ServiceType::THINGSBOARD->label())
-                                        ->content(StatusHelper::formatStatus($scenario->thingsboard_status)),
+                                    $this->renderStatus(
+                                        ServiceType::THINGSBOARD->label(),
+                                        $scenario->thingsboard_status
+                                    ),
                                 ])
-                        ])
+                        ]),
                 ]);
         }
         

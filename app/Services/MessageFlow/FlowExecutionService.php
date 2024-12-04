@@ -27,6 +27,7 @@ class FlowExecutionService
         // Create test result
         $testResult = TestResult::create([
             'test_scenario_id' => $testScenario->id,
+            'device_id' => $testScenario->mqttDevice->id,
             'status' => TestResultStatus::PENDING,
             'start_time' => Carbon::now(),
         ]);
@@ -45,10 +46,11 @@ class FlowExecutionService
         foreach ($requiredFlows as $flow) {
             $flow = MessageFlow::create([
                 'test_result_id' => $testResult->id,
-                'flow_number' => $flow->value,
+                'flow_number' => $flow->flowNumber(),
                 'flow_type' => $flow,
                 'description' => $flow->name,
                 'status' => TestResultStatus::PENDING,
+                'started_at' => Carbon::now(),
                 'created_at' => Carbon::now(),
             ]);
             $this->executeFlow($flow);
@@ -64,7 +66,7 @@ class FlowExecutionService
             foreach ($httpFlows as $flow) {
                 $flow = MessageFlow::create([
                     'test_result_id' => $testResult->id,
-                    'flow_number' => $flow->value,
+                    'flow_number' => $flow->flowNumber(),
                     'flow_type' => $flow,
                     'description' => $flow->name,
                     'status' => TestResultStatus::PENDING,
@@ -81,13 +83,12 @@ class FlowExecutionService
     {
         try {
             $device = $flow->testResult->testScenario->mqttDevice;
-            $flowType = FlowType::from($flow->flow_number);
+            $flowType = $flow->flow_type;
 
             // Execute flow based on type
             match($flowType) {
                 // Routes to ThingsBoard                
-                FlowType::CS_TO_TB_TO_CS,
-                FlowType::CS_TO_TB_TO_CS,
+                FlowType::TB_TO_CS,                
                 FlowType:: DIRECT_TEST_TB_CS,                
                 FlowType::TB_MQTT_HEALTH => 
                     $this->deviceCommunicationService->sendMqttDataToThingsBoard(
@@ -98,7 +99,8 @@ class FlowExecutionService
 
                 // Routes to ChirpStack
                 FlowType::CS_TO_TB,
-                FlowType::DIRECT_TEST_TB_CS,
+                FlowType::CS_TO_TB_TO_CS,
+                FlowType::DIRECT_TEST_CS_TB,
                 FlowType::CS_MQTT_HEALTH =>
                     $this->deviceCommunicationService->sendMqttDataToChirpStack(
                         $device,

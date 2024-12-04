@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\TestResult;
+use App\Models\DeviceMessage;
 use App\Services\MessageFlow\MessageFlowStatusService;
 use App\Enums\TestResultStatus;
 use Illuminate\Http\Request;
@@ -69,6 +70,24 @@ class ChirpStackWebhookController extends Controller
                     'completed_at' => now(),
                     'response_time_ms' => $responseTime
                 ]);
+
+                // Create or update device message record
+                DeviceMessage::updateOrCreate(
+                    [
+                        'message_flow_id' => $messageFlow->id,
+                    ],
+                    [
+                        'device_id' => $messageFlow->testResult->device_id,
+                        'source' => 'ChirpStack',
+                        'success' => true,
+                        'error_message' => null,
+                        'response_time_ms' => $responseTime,
+                        'metadata' => json_encode([
+                            'rssi' => $validated['rxInfo'][0]['rssi'] ?? null,
+                            'snr' => $validated['rxInfo'][0]['snr'] ?? null,
+                        ]),
+                    ]
+                );
             }
             
             // Process message flows and update service statuses

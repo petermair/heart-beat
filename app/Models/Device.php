@@ -25,8 +25,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Server $chirpstackServer
  * @property-read \App\Models\CommunicationType $communicationType
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\DeviceMonitoringResult> $monitoringResults
- * @property-read int|null $monitoring_results_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestResult> $testResults
  * @property-read int|null $test_results_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TestScenario> $testScenarios
@@ -95,11 +93,6 @@ class Device extends Model
         return $this->belongsTo(CommunicationType::class);
     }
 
-    public function monitoringResults(): HasMany
-    {
-        return $this->hasMany(DeviceMonitoringResult::class);
-    }
-
     public function testScenarios(): HasMany
     {
         return $this->hasMany(TestScenario::class);
@@ -108,39 +101,5 @@ class Device extends Model
     public function testResults(): HasMany
     {
         return $this->hasMany(TestResult::class);
-    }
-
-    public function latestMonitoringResult()
-    {
-        return $this->monitoringResults()->latest()->first();
-    }
-
-    public function getSuccessRate(): float
-    {
-        $total = $this->monitoringResults()->count();
-        if ($total === 0) {
-            return 0;
-        }
-
-        $successful = $this->monitoringResults()->where('success', true)->count();
-
-        return round(($successful / $total) * 100, 2);
-    }
-
-    public function getAverageResponseTime(): ?float
-    {
-        $results = $this->monitoringResults()
-            ->whereNotNull('chirpstack_response_time')
-            ->whereNotNull('thingsboard_response_time')
-            ->get();
-
-        if ($results->isEmpty()) {
-            return null;
-        }
-
-        $avgChirpstack = $results->avg('chirpstack_response_time');
-        $avgThingsboard = $results->avg('thingsboard_response_time');
-
-        return round(($avgChirpstack + $avgThingsboard) / 2, 2);
     }
 }

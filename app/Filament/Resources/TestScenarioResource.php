@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Enums\ServiceType;
 use App\Enums\StatusType;
 use App\Filament\Resources\TestScenarioResource\Pages;
-use App\Jobs\ExecuteTestScenarioJob;
 use App\Models\TestScenario;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Artisan;
 
 class TestScenarioResource extends Resource
 {
@@ -52,8 +52,8 @@ class TestScenarioResource extends Resource
                             ->label('MQTT Device'),
                         Forms\Components\Select::make('http_device_id')
                             ->relationship('httpDevice', 'name')
-                            ->required()
-                            ->label('HTTP Device'),
+                            ->label('HTTP Device')
+                            ->nullable(),
                         Forms\Components\Toggle::make('is_active')
                             ->required()
                             ->default(true),
@@ -89,18 +89,11 @@ class TestScenarioResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('mqttDevice.name')
-                    ->label('MQTT Device')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('httpDevice.name')
-                    ->label('HTTP Device')
-                    ->sortable()
-                    ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 // ThingsBoard Status
                 Tables\Columns\TextColumn::make('thingsboard_status')
+                    ->label('ThingsBoard')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         StatusType::HEALTHY->value => 'success',
@@ -109,17 +102,9 @@ class TestScenarioResource extends Resource
                         default => 'gray'
                     })
                     ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
-                Tables\Columns\TextColumn::make('thingsboard_success_rate_1h')
-                    ->label('TB 1h')
-                    ->numeric(2)
-                    ->suffix('%')
-                    ->color(fn ($state): string => match (true) {
-                        $state >= 90 => 'success',
-                        $state >= 75 => 'warning',
-                        default => 'danger'
-                    }),
                 // ChirpStack Status
                 Tables\Columns\TextColumn::make('chirpstack_status')
+                    ->label('ChirpStack')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         StatusType::HEALTHY->value => 'success',
@@ -128,17 +113,9 @@ class TestScenarioResource extends Resource
                         default => 'gray'
                     })
                     ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
-                Tables\Columns\TextColumn::make('chirpstack_success_rate_1h')
-                    ->label('CS 1h')
-                    ->numeric(2)
-                    ->suffix('%')
-                    ->color(fn ($state): string => match (true) {
-                        $state >= 90 => 'success',
-                        $state >= 75 => 'warning',
-                        default => 'danger'
-                    }),
                 // MQTT Status
-                Tables\Columns\TextColumn::make('mqtt_status')
+                Tables\Columns\TextColumn::make('mqtt_tb_status')
+                    ->label('MQTT TB')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         StatusType::HEALTHY->value => 'success',
@@ -147,26 +124,43 @@ class TestScenarioResource extends Resource
                         default => 'gray'
                     })
                     ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
-                Tables\Columns\TextColumn::make('mqtt_success_rate_1h')
-                    ->label('MQTT 1h')
-                    ->numeric(2)
-                    ->suffix('%')
-                    ->color(fn ($state): string => match (true) {
-                        $state >= 90 => 'success',
-                        $state >= 75 => 'warning',
-                        default => 'danger'
-                    }),
+                Tables\Columns\TextColumn::make('mqtt_cs_status')
+                    ->label('MQTT CS')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        StatusType::HEALTHY->value => 'success',
+                        StatusType::WARNING->value => 'warning',
+                        StatusType::CRITICAL->value => 'danger',
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
+                // LoRa Status
+                Tables\Columns\TextColumn::make('lorarx_status')
+                    ->label('LoRa RX')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        StatusType::HEALTHY->value => 'success',
+                        StatusType::WARNING->value => 'warning',
+                        StatusType::CRITICAL->value => 'danger',
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
+                Tables\Columns\TextColumn::make('loratx_status')
+                    ->label('LoRa TX')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        StatusType::HEALTHY->value => 'success',
+                        StatusType::WARNING->value => 'warning',
+                        StatusType::CRITICAL->value => 'danger',
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst(strtolower($state))),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Active Status')
-                    ->placeholder('All')
+                    ->label('Active')
                     ->trueLabel('Active Only')
                     ->falseLabel('Inactive Only'),
-                Tables\Filters\SelectFilter::make('mqtt_device')
-                    ->relationship('mqttDevice', 'name'),
-                Tables\Filters\SelectFilter::make('http_device')
-                    ->relationship('httpDevice', 'name'),
                 // Service Status Filters
                 Tables\Filters\SelectFilter::make('thingsboard_status')
                     ->options([
@@ -192,7 +186,7 @@ class TestScenarioResource extends Resource
                             fn (Builder $query, $status): Builder => $query->where('chirpstack_status', $status)
                         );
                     }),
-                Tables\Filters\SelectFilter::make('mqtt_status')
+                Tables\Filters\SelectFilter::make('mqtt_tb_status')
                     ->options([
                         StatusType::HEALTHY->value => StatusType::HEALTHY->label(),
                         StatusType::WARNING->value => StatusType::WARNING->label(),
@@ -201,7 +195,43 @@ class TestScenarioResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['value'],
-                            fn (Builder $query, $status): Builder => $query->where('mqtt_status', $status)
+                            fn (Builder $query, $status): Builder => $query->where('mqtt_tb_status', $status)
+                        );
+                    }),
+                Tables\Filters\SelectFilter::make('mqtt_cs_status')
+                    ->options([
+                        StatusType::HEALTHY->value => StatusType::HEALTHY->label(),
+                        StatusType::WARNING->value => StatusType::WARNING->label(),
+                        StatusType::CRITICAL->value => StatusType::CRITICAL->label(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $status): Builder => $query->where('mqtt_cs_status', $status)
+                        );
+                    }),
+                Tables\Filters\SelectFilter::make('lorarx_status')
+                    ->options([
+                        StatusType::HEALTHY->value => StatusType::HEALTHY->label(),
+                        StatusType::WARNING->value => StatusType::WARNING->label(),
+                        StatusType::CRITICAL->value => StatusType::CRITICAL->label(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $status): Builder => $query->where('lorarx_status', $status)
+                        );
+                    }),
+                Tables\Filters\SelectFilter::make('loratx_status')
+                    ->options([
+                        StatusType::HEALTHY->value => StatusType::HEALTHY->label(),
+                        StatusType::WARNING->value => StatusType::WARNING->label(),
+                        StatusType::CRITICAL->value => StatusType::CRITICAL->label(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $status): Builder => $query->where('loratx_status', $status)
                         );
                     }),
             ])
@@ -216,7 +246,9 @@ class TestScenarioResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(function (TestScenario $record) {
-                        ExecuteTestScenarioJob::dispatch($record);
+                        Artisan::call('test-scenarios:run', [
+                            '--scenario-id' => $record->id
+                        ]);
 
                         Notification::make()
                             ->title('Test Execution Started')
@@ -242,6 +274,20 @@ class TestScenarioResource extends Resource
                         ->deselectRecordsAfterCompletion(),
                 ]),
             ]);
+    }
+
+    protected function getStatusDescription(TestScenario $scenario): string
+    {
+        $services = [
+            ServiceType::THINGSBOARD->label() => $scenario->thingsboard_status,
+            ServiceType::MQTT_TB->label() => $scenario->mqtt_tb_status,
+            ServiceType::LORATX->label() => $scenario->loratx_status,
+            ServiceType::MQTT_CS->label() => $scenario->mqtt_cs_status,
+            ServiceType::CHIRPSTACK->label() => $scenario->chirpstack_status,
+            ServiceType::LORARX->label() => $scenario->lorarx_status,
+        ];
+ 
+        return StatusHelper::getStatusDescription($services);
     }
 
     public static function getPages(): array

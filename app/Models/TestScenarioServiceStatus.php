@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property int $test_scenario_id
- * @property string $service_type
- * @property string $status
+ * @property ServiceType $service_type
+ * @property StatusType $status
  * @property int $success_count_1h
  * @property int $total_count_1h
  * @property float $success_rate_1h
